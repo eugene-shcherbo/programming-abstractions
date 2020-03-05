@@ -1,0 +1,4 @@
+ATL=Atlanta, GA, USA
+ORD=Chicago, IL, USA
+LHR=London, England, United Kingdom
+HND=Tokyo, Japan
