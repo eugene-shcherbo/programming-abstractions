@@ -6,8 +6,10 @@ using namespace std;
 
 bool wildcardMatch(string filename, string pattern);
 void test(const string& filename, const string& pattern, bool expected);
-string cutStar(string filename, string pattern, int i);
-
+bool matchHelper(string filename, string pattern, int nameIndex, int patternIndex);
+bool matchAfterStar(string filename, string pattern, int nameIndex, int patternIndex);
+bool notMatchSpecifically(string filename, string pattern, int nameIndex, int patternIndex);
+bool isEmpty(string str, int idx);
 
 int main() {
     test("US.txt", "*.*", true);
@@ -21,55 +23,46 @@ int main() {
     test("he.ll", "??.??", true);
     test("he.lloooo", "??.??", false);
     test("baaabab", "*****ba*****ab", true);
+    test("", "?", false);
+    test(" ", "?", true);
+    test(".", "..", false);
 
     return 0;
 }
 
 bool wildcardMatch(string filename, string pattern) {
-    if (filename.empty() && pattern.empty()) {
-        return true;
-    } else if (!pattern.empty()) {
-        char s = pattern[0];
+    return matchHelper(filename, pattern, 0, 0);
+}
 
-        if (s == '*') {
-            filename = cutStar(filename, pattern, 0);
-        } else if (filename.empty()) {
-            return false;
-        } else if (s == '?') {
-            filename = filename.substr(1);
-        } else if (filename[0] != s) {
-            return false;
-        } else {
-            filename = filename.substr(1);
+bool matchHelper(string filename, string pattern, int nameIndex, int patternIndex) {
+    if (isEmpty(pattern, patternIndex)) {
+        return isEmpty(filename, nameIndex);
+    } else if (pattern[patternIndex] == '*') {
+        return matchAfterStar(filename, pattern, nameIndex, patternIndex);
+    } else if (notMatchSpecifically(filename, pattern, nameIndex, patternIndex)) {
+        return false;
+    } else {
+        return matchHelper(filename, pattern, nameIndex + 1, patternIndex + 1);
+    }
+}
+
+bool isEmpty(string str, int idx) {
+    return idx == str.size();
+}
+
+
+bool matchAfterStar(string filename, string pattern, int nameIndex, int patternIndex) {
+    for (int i = nameIndex; i <= filename.size(); i++) {
+        if (matchHelper(filename, pattern, i, patternIndex + 1)) {
+            return true;
         }
-
-        return wildcardMatch(filename, pattern.substr(1));
     }
 
     return false;
 }
 
-string cutStar(string filename, string pattern, int star) {
-    char ch = '\0';
-
-    for (int i = star; i < pattern.size(); i++) {
-        if (pattern[i] != '*') {
-            ch = pattern[i];
-            break;
-        }
-    }
-
-    if (ch == '\0') {
-        return "";
-    } else {
-        int index = filename.find(ch, 0);
-
-        if (index == string::npos) {
-            return "";
-        }
-
-        return filename.substr(index);
-    }
+bool notMatchSpecifically(string filename, string pattern, int nameIndex, int patternIndex) {
+    return pattern[patternIndex] != '?' && pattern[patternIndex] != filename[nameIndex];
 }
 
 void test(const string& filename, const string& pattern, bool expected) {
@@ -79,5 +72,3 @@ void test(const string& filename, const string& pattern, bool expected) {
          << " == " << boolToString(m)
          << " (" << boolToString(expected) << ")" << endl;
 }
-
-
