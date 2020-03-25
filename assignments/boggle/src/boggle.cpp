@@ -84,15 +84,26 @@ static int getPreferredBoardSize();
  * Manages all details needed for the user to play one
  * or more games of Boggle.
  */
-static void playBoggle();
+static void playBoggle(Lexicon& english);
 
-static void findWordsHelper(Grid<string>& board, int row, int col, const string& word, Set<string>& words, const Lexicon& english);
+static void preconfigureBoard(Grid<char>& board, int dimension);
+
+static void fillCubes(Vector<string>& cubes, const string* config, int size);
+
+static void shuffleCubes(Vector<string>& cubes);
+
+static void shuffleLetters(string& word);
+
+static char faceLetter(const string& cube);
+
+static void drawCubeBoard(const Grid<char>& board);
+
+static void findAllWorlds(const Grid<char>& board, Set<string>& words, const Lexicon& english);
+
+static void findWordsHelper(const Grid<char>& board, int row, int col, const string& word,
+                            Set<string>& words, const Lexicon& english, Grid<bool>& visited);
 
 static bool isBoggleWord(const string& word, const Lexicon& english);
-
-static void swap(string& s1, string& s2);
-
-static void swap(char& ch1, char& ch2);
 
 /**
  * Function: main
@@ -100,15 +111,20 @@ static void swap(char& ch1, char& ch2);
  * Serves as the entry point to the entire program.
  */
 int main() {
+    Lexicon english("dictionary.txt");
     GWindow gw(kBoggleWindowWidth, kBoggleWindowHeight);
     initGBoggle(gw);
     welcome();
-   // if (getYesOrNo("Do you need instructions?")) giveInstructions();
+
+    if (getYesOrNo("Do you need instructions?")) giveInstructions();
+
     do {
-        playBoggle();
+        playBoggle(english);
     } while (getYesOrNo("Would you like to play again?"));
+
     cout << "Thank you for playing!" << endl;
     shutdownGBoggle();
+
     return 0;
 }
 
@@ -146,21 +162,38 @@ static void giveInstructions() {
     getLine(); // ignore return value
 }
 
+static void playBoggle(Lexicon& english) {
+    int dimension = getPreferredBoardSize();
+    drawBoard(dimension, dimension);
+
+    Grid<char> board(dimension, dimension);
+    preconfigureBoard(board, dimension);
+    drawCubeBoard(board);
+
+    Set<string> words;
+    findAllWorlds(board, words, english);
+}
+
 static int getPreferredBoardSize() {
-    //cout << "You can choose standard Boggle (4x4 grid) or Big Boggle (5x5 grid)." << endl;
-    //return getIntegerBetween("Which dimension would you prefer: 4 or 5?", 4, 5);
-    return 4;
+    cout << "You can choose standard Boggle (4x4 grid) or Big Boggle (5x5 grid)." << endl;
+    return getIntegerBetween("Which dimension would you prefer: 4 or 5?", 4, 5);
 }
 
-static int calcRandomInteger(int from, int to) {
-    // return randomInteger(from, to);
-    return from;
+static void preconfigureBoard(Grid<char>& board, int dimension) {
+    Vector<string> cubes;
+    fillCubes(cubes, kStandardCubes, dimension * dimension);
+    shuffleCubes(cubes);
+
+    for (int i = 0; i < cubes.size(); i++) {
+        int row = i / dimension;
+        int col = i % dimension;
+        board[row][col] = faceLetter(cubes[i]);
+    }
 }
 
-static void shuffleLetters(string& word) {
-    for (int i = 0; i < word.size(); i++) {
-        int randomIndex = calcRandomInteger(i, word.size() - 1);
-        swap(word[i], word[randomIndex]);
+static void fillCubes(Vector<string>& cubes, const string* config, int size) {
+    for (int i = 0; i < size; i++) {
+        cubes += config[i];
     }
 }
 
@@ -168,104 +201,67 @@ static void shuffleCubes(Vector<string>& cubes) {
     int n = cubes.size();
 
     for (int i = 0; i < n; i++) {
-        int randIndex = calcRandomInteger(i, n);
+        int randIndex = randomInteger(i, n - 1);
         swap(cubes[i], cubes[randIndex]);
         shuffleLetters(cubes[i]);
         shuffleLetters(cubes[randIndex]);
     }
 }
 
-static string faceLetter(const string& cube) {
+static void shuffleLetters(string& word) {
+    size_t n = word.size();
+
+    for (size_t i = 0; i < n; i++) {
+        size_t randomIndex = randomInteger(i, n - 1);
+        swap(word[i], word[randomIndex]);
+    }
+}
+
+static char faceLetter(const string& cube) {
     if (cube.length() == 0) throw "faceLetter: word must consists of 6 letters";
 
-    return cube.substr(0, 1);
+    return cube[0];
 }
 
-static void initBoard(Grid<string>& board, int dimension, const Vector<string>& cubes) {
-    for (int i = 0; i < cubes.size(); i++) {
-        int row = i / dimension;
-        int col = i % dimension;
 
-        board[row][col] = faceLetter(cubes[i]);
+static void drawCubeBoard(const Grid<char>& board) {
+    for (int r = 0; r < board.height(); r++) {
+        for (int c = 0; c < board.width(); c++) {
+            labelCube(r, c, board[r][c]);
+        }
     }
 }
 
-static void chooseFindAndUnchoose(Grid<string>& board, int row, int col, const string& word, Set<string>& words, const Lexicon& english) {
-    string letter = board[row][col];
-    board[row][col] = " ";
-    findWordsHelper(board, row, col, word + letter, words, english);
-    board[row][col] = letter;
+static void findAllWorlds(const Grid<char>& board, Set<string>& words, const Lexicon& english) {
+    Grid<bool> visited(board.height(), board.width());
+
+    for (int r = 0; r < board.height(); r++) {
+        for (int c = 0; c < board.width(); c++) {
+            findWordsHelper(board, r, c, "", words, english, visited);
+        }
+    }
 }
 
-static void findWordsHelper(Grid<string>& board, int row, int col, const string& word, Set<string>& words, const Lexicon& english) {
-    if (!english.containsPrefix(word)) {
-        return;
-    }
+static void findWordsHelper(const Grid<char>& board, int row, int col, const string& word,
+                            Set<string>& words, const Lexicon& english, Grid<bool>& visited) {
 
-    if (isBoggleWord(word, english)) {
-        words.add(word);
-    }
+    if (!english.containsPrefix(word)) return;
+    if (isBoggleWord(word, english)) words.add(word);
+
+    visited[row][col] = true;
 
     for (int r = row - 1; r <= row + 1; r++) {
         for (int c = col - 1; c <= col + 1; c++) {
-            if (board.inBounds(r, c) && board[r][c] != " ") {
-                chooseFindAndUnchoose(board, r, c, word, words, english);
+            if (board.inBounds(r, c) && !visited[r][c]) {
+                findWordsHelper(board, r, c, word + board[r][c], words, english, visited);
             }
         }
      }
-}
 
-static void findAllWorlds(Grid<string>& board, Set<string>& words, const Lexicon& english) {
-    for (int r = 0; r < board.height(); r++) {
-        for (int c = 0; c < board.width(); c++) {
-            chooseFindAndUnchoose(board, r, c, "", words, english);
-        }
-    }
-}
-
-static void playBoggle() {
-    int dimension = getPreferredBoardSize();
-    drawBoard(dimension, dimension);
-
-    Vector<string> cubes;
-    Grid<string> board(dimension, dimension);
-
-    for (string cube: kStandardCubes) {
-        cubes += cube;
-    }
-
-    shuffleCubes(cubes);
-    initBoard(board, dimension, cubes);
-
-    cout << board.toString2D() << endl << endl;
-
-    Lexicon english("dictionary.txt");
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    Set<string> words;
-    findAllWorlds(board, words, english);
-
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-
-    cout << duration.count() << endl;
-    cout << words << endl;
+    visited[row][col] = false;
 }
 
 static bool isBoggleWord(const string& word, const Lexicon& english) {
     return word.length() >= kMinLength
             && english.contains(word);
-}
-
-static void swap(string& s1, string& s2) {
-    string temp = s1;
-    s1 = s2;
-    s2 = temp;
-}
-
-static void swap(char& ch1, char& ch2) {
-    char temp = ch1;
-    ch1 = ch2;
-    ch2 = temp;
 }
