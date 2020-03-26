@@ -105,6 +105,16 @@ static void findWordsHelper(const Grid<char>& board, int row, int col, const str
 
 static bool isBoggleWord(const string& word, const Lexicon& english);
 
+static void humanTurn(const Grid<char>& board, const Set<string>& words, const Lexicon& english, Set<string>& userWords);
+
+static void findHumanPath(const Grid<char>& board, Vector<int>& path, const string& word);
+
+static bool findHumanPathHelper(const Grid<char>& board, Vector<int>& path, int row, int col, const string& word);
+
+static void showHumanPath(Vector<int>& path, int dimension);
+
+static void computerTurn(const Set<string> words, const Set<string>& userWords);
+
 /**
  * Function: main
  * --------------
@@ -172,6 +182,10 @@ static void playBoggle(Lexicon& english) {
 
     Set<string> words;
     findAllWorlds(board, words, english);
+
+    Set<string> userWords;
+    humanTurn(board, words, english, userWords);
+    computerTurn(words, userWords);
 }
 
 static int getPreferredBoardSize() {
@@ -264,4 +278,86 @@ static void findWordsHelper(const Grid<char>& board, int row, int col, const str
 static bool isBoggleWord(const string& word, const Lexicon& english) {
     return word.length() >= kMinLength
             && english.contains(word);
+}
+
+static void humanTurn(const Grid<char>& board, const Set<string>& words, const Lexicon& english, Set<string>& userWords) {
+    while (true) {
+        string word = getLine("Enter a word: ");
+
+        if (word.empty()) {
+            break;
+        } else if (userWords.contains(word)) {
+            cout << "You've already guessed that word." << endl;
+        } else if (!english.contains(word)) {
+            cout << "Sorry, that isn't even a word." << endl;
+        } else if (word.length() < kMinLength) {
+            cout << "Sorry, that isn't long enough to even be considered." << endl;
+        } else if (!words.contains(word)) {
+            cout << "Sorry, that word can't be constructed with this board." << endl;
+        } else {
+            Vector<int> humanPath;
+            userWords.add(word);
+            recordWordForPlayer(word, HUMAN);
+            findHumanPath(board, humanPath, word);
+            showHumanPath(humanPath, board.width());
+        }
+    }
+}
+
+static void findHumanPath(const Grid<char>& board, Vector<int>& path, const string& word) {
+    for (int r = 0; r < board.height(); r++) {
+        for (int c = 0; c < board.width(); c++) {
+            if (findHumanPathHelper(board, path, r, c, word)) {
+                return;
+            }
+        }
+    }
+}
+
+static bool findHumanPathHelper(const Grid<char>& board, Vector<int>& path, int row, int col, const string& word) {
+    if (word.empty()) return true;
+
+    for (int r = row - 1; r <= row + 1; r++) {
+        for (int c = col - 1; c <= col + 1; c++) {
+            int i = r * board.height() + c;
+
+            if (board.inBounds(r, c) && !path.contains(i) && board[r][c] == word[0]) {
+                path.add(i);
+
+                if (findHumanPathHelper(board, path, r, c, word.substr(1))) {
+                    return true;
+                }
+
+                path.removeBack();
+            }
+        }
+    }
+
+    return false;
+}
+
+static void showHumanPath(Vector<int>& path, int dimension) {
+    for (int pathItem : path) {
+        int row = pathItem / dimension;
+        int col = pathItem % dimension;
+        highlightCube(row, col, true);
+        pause(kDelayBetweenHighlights);
+    }
+
+    pause(kDelayAfterAllHighlights);
+
+    for (int i = path.size() - 1; i >= 0; i--) {
+        int row = path[i] / dimension;
+        int col = path[i] % dimension;
+        highlightCube(row, col, false);
+        pause(kDelayBetweenHighlights);
+    }
+}
+
+static void computerTurn(const Set<string> words, const Set<string>& userWords) {
+    Set<string> remainingWords = words - userWords;
+
+    for (string word : remainingWords) {
+        recordWordForPlayer(word, COMPUTER);
+    }
 }
