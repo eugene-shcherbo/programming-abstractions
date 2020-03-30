@@ -20,28 +20,17 @@
 
 using namespace std;
 
-/*static const string kStandardCubes[16] = {
+static const int kStandardBoardDimension = 4;
+static const int kBigBoardDimension = 5;
+
+static const string kStandardCubes[kStandardBoardDimension * kStandardBoardDimension] = {
    "AAEEGN", "ABBJOO", "ACHOPS", "AFFKPS",
    "AOOTTW", "CIMOTU", "DEILRX", "DELRVY",
    "DISTTY", "EEGHNW", "EEINSU", "EHRTVW",
    "EIOSST", "ELRTTY", "HIMNQU", "HLNNRZ"
-};*/
-
-/*static const string kStandardCubes[16] = {
-   "AAEEGN", "ABBJOO", "PCHOAS", "KFFAPS",
-   "AOOTTW", "UIMOTC", "REILDX", "EDLRVY",
-   "TISDTY", "EEGHNW", "UEINSE", "RHETVW",
-   "TIOSSE", "YLRTTE", "HIMNQU", "LHNNRZ"
-};*/
-
-static const string kStandardCubes[16] = {
-   "EAAEGN", "BBBJOO", "PCHOAS", "FFFAPS",
-   "WOOTTW", "TIMOTC", "REILDX", "YDLRVY",
-   "TISDTY", "NEGHNW", "EEINSE", "HHETVW",
-   "TIOSSE", "TTLRTTE", "IIMNQU", "HHNNRZ"
 };
 
-static const string kBigBoggleCubes[25] = {
+static const string kBigBoggleCubes[kBigBoardDimension * kBigBoardDimension] = {
    "AAAFRS", "AAEEEE", "AAFIRS", "ADENNN", "AEEEEM",
    "AEEGMU", "AEGMNN", "AFIRSY", "BJKQXZ", "CCNSTW",
    "CEIILT", "CEILPT", "CEIPST", "DDLNOR", "DDHNOT",
@@ -88,7 +77,9 @@ static void playBoggle(Lexicon& english);
 
 static void preconfigureBoard(Grid<char>& board, int dimension);
 
-static void fillCubes(Vector<string>& cubes, const string* config, int size);
+static void fillCubesWithUserConfiguration(Vector<string>& cubes, int size);
+
+static void fillCubes(Vector<string>& cubes, const string config[], int size);
 
 static void shuffleCubes(Vector<string>& cubes);
 
@@ -194,9 +185,20 @@ static int getPreferredBoardSize() {
 }
 
 static void preconfigureBoard(Grid<char>& board, int dimension) {
+    cout << "I'll give you a chance to set up the board to your specification,"
+         << "which makes it easier to confirm your boggle program is working."
+         << endl;
+    bool isUserSetup = getYesOrNo("Do you want to force the board configuration?");
+
     Vector<string> cubes;
-    fillCubes(cubes, kStandardCubes, dimension * dimension);
-    shuffleCubes(cubes);
+
+    if (isUserSetup) {
+        fillCubesWithUserConfiguration(cubes, dimension * dimension);
+    } else if (dimension == kStandardBoardDimension) {
+        fillCubes(cubes, kStandardCubes, dimension * dimension);
+    } else if (dimension == kBigBoardDimension) {
+        fillCubes(cubes, kBigBoggleCubes, dimension * dimension);
+    }
 
     for (int i = 0; i < cubes.size(); i++) {
         int row = i / dimension;
@@ -205,10 +207,34 @@ static void preconfigureBoard(Grid<char>& board, int dimension) {
     }
 }
 
-static void fillCubes(Vector<string>& cubes, const string* config, int size) {
+static void fillCubesWithUserConfiguration(Vector<string>& cubes, int size) {
+    int dimension = sqrt(size);
+
+    cout << "Enter a " << size << "-character string to identify which letters you want on the cubes." << endl;
+    cout << "The first "
+         << dimension
+         << " characters form the top row, the next "
+         << dimension
+         << " characters form the second row, and so forth." << endl;
+
+    string cubesConfig = getLine("Enter a string: ");
+
+    while (cubesConfig.length() != size) {
+        cout << "Enter a string that's precisely " << size << " characters long." << endl;
+        cubesConfig = getLine("Try again: ");
+    }
+
+    for (char c: cubesConfig) {
+        cubes += string(1, c);
+    }
+}
+
+static void fillCubes(Vector<string>& cubes, const string config[], int size) {
     for (int i = 0; i < size; i++) {
         cubes += config[i];
     }
+
+    shuffleCubes(cubes);
 }
 
 static void shuffleCubes(Vector<string>& cubes) {
@@ -286,12 +312,12 @@ static void humanTurn(const Grid<char>& board, const Set<string>& words, const L
 
         if (word.empty()) {
             break;
+        } else if (word.length() < kMinLength) {
+            cout << "Sorry, that isn't long enough to even be considered." << endl;
         } else if (userWords.contains(word)) {
             cout << "You've already guessed that word." << endl;
         } else if (!english.contains(word)) {
             cout << "Sorry, that isn't even a word." << endl;
-        } else if (word.length() < kMinLength) {
-            cout << "Sorry, that isn't long enough to even be considered." << endl;
         } else if (!words.contains(word)) {
             cout << "Sorry, that word can't be constructed with this board." << endl;
         } else {
