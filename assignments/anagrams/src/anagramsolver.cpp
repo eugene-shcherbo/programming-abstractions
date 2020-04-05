@@ -6,33 +6,43 @@
 
 using namespace std;
 
-void anagramsHelper(LetterInventory& inventory, Vector<string>& anagrams, const Set<string>& dictionary, int& count);
+int anagramsHelper(LetterInventory& inventory, Vector<string>& anagrams, const Set<string>& dictionary, int max, int count);
+
+void pruneDictionary(LetterInventory& inventory, const Set<string> dictionary, Set<string>& prunedDictionary) {
+    for (string word: dictionary) {
+        if (inventory.contains(word)) {
+            prunedDictionary.add(word);
+        }
+    }
+}
 
 int findAnagrams(const string& phrase, int max, const Set<string>& dictionary) {
     Vector<string> anagrams;
     LetterInventory inventory(phrase);
-    int count = 0;
 
-    anagramsHelper(inventory, anagrams, dictionary, count);
-
-    return count;
+    return anagramsHelper(inventory, anagrams, dictionary, max, 0);
 }
 
-void anagramsHelper(LetterInventory& inventory, Vector<string>& anagrams, const Set<string>& dictionary, int& count) {
+int anagramsHelper(LetterInventory& inventory, Vector<string>& anagrams, const Set<string>& dictionary, int max, int count) {
+    int totalFound = 0;
+
     if (inventory.isEmpty()) {
         cout << anagrams << endl;
-        count++;
-    } else {
-        for (string word: dictionary) {
-            if (inventory.contains(word)) {
-                anagrams.add(word);
-                inventory.subtract(word);
+        totalFound++;
+    } else if (max == 0 || count < max) {
+        Set<string> prunedDictionary;
+        pruneDictionary(inventory, dictionary, prunedDictionary);
 
-                anagramsHelper(inventory, anagrams, dictionary, count);
+        for (string word: prunedDictionary) {
+            anagrams.add(word);
+            inventory.subtract(word);
 
-                anagrams.remove(anagrams.size() - 1);
-                inventory.add(word);
-            }
+            totalFound += anagramsHelper(inventory, anagrams, prunedDictionary, max, count + 1);
+
+            anagrams.remove(anagrams.size() - 1);
+            inventory.add(word);
         }
     }
+
+    return totalFound;
 }
