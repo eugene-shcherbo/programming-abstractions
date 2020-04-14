@@ -30,6 +30,19 @@ Rational::Rational(int n, int d) {
     }
 }
 
+std::string Rational::toString() const {
+    if (den == 1) {
+        return integerToString(num);
+    } else {
+        return integerToString(num) + "/" + integerToString(den);
+    }
+}
+
+void Rational::zero() {
+    num = 0;
+    den = 1;
+}
+
 std::ostream& operator<< (std::ostream& os, const Rational& r) {
     return os << r.toString();
 }
@@ -50,17 +63,68 @@ Rational operator- (const Rational& r1, const Rational& r2) {
     return Rational(r1.num * r2.den - r2.num * r1.den, r1.den * r2.den);
 }
 
-std::string Rational::toString() const {
-    if (den == 1) {
-        return integerToString(num);
-    } else {
-        return integerToString(num) + "/" + integerToString(den);
-    }
+bool operator== (const Rational& r1, const Rational& r2) {
+    return r1.den == r2.den && r1.num == r2.num;
 }
 
-void Rational::zero() {
-    num = 0;
-    den = 1;
+bool operator!= (const Rational& r1, const Rational& r2) {
+    return !(r1 == r2);
+}
+
+bool operator< (const Rational& r1, const Rational& r2) {
+    return !(r1 >= r2);
+}
+
+bool operator<= (const Rational& r1, const Rational& r2) {
+    return r1 < r2 || r1 == r2;
+}
+
+bool operator> (const Rational& r1, const Rational& r2) {
+    return (r1 - r2).num > 0;
+}
+
+bool operator>= (const Rational& r1, const Rational& r2) {
+    return r1 > r2 || r1 == r2;
+}
+
+Rational operator+= (Rational& r1, const Rational& r2) {
+    r1 = r1 + r2;
+    return r1;
+}
+
+Rational operator*= (Rational& r1, const Rational& r2) {
+    r1 = r1 * r2;
+    return r1;
+}
+
+Rational operator/= (Rational& r1, const Rational& r2) {
+    r1 = r1 / r2;
+    return r1;
+}
+
+Rational operator-= (Rational& r1, const Rational& r2) {
+    r1 = r1 - r2;
+    return r1;
+}
+
+Rational operator++ (Rational& r, int) {
+    Rational old = r;
+    r += 1; // implicit conversion via constructor Rational(int n)s
+    return old;
+}
+
+Rational operator++ (Rational& r) {
+    return r += 1;
+}
+
+Rational operator-- (Rational& r, int) {
+    Rational old = r;
+    r -= 1;
+    return old;
+}
+
+Rational operator-- (Rational& r) {
+    return r -= 1;
 }
 
 int gcd(int x, int y) {

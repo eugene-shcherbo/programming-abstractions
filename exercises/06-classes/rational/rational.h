@@ -16,6 +16,8 @@ public:
     friend Rational operator* (const Rational& r1, const Rational& r2);
     friend Rational operator/ (const Rational& r1, const Rational& r2);
     friend Rational operator- (const Rational& r1, const Rational& r2);
+    friend bool operator== (const Rational& r1, const Rational& r2);
+    friend bool operator> (const Rational& r1, const Rational& r2);
 
 private:
     int num;
@@ -29,5 +31,19 @@ Rational operator+ (const Rational& r1, const Rational& r2);
 Rational operator* (const Rational& r1, const Rational& r2);
 Rational operator/ (const Rational& r1, const Rational& r2);
 Rational operator- (const Rational& r1, const Rational& r2);
+bool operator== (const Rational& r1, const Rational& r2);
+bool operator!= (const Rational& r1, const Rational& r2);
+bool operator< (const Rational& r1, const Rational& r2);
+bool operator<= (const Rational& r1, const Rational& r2);
+bool operator> (const Rational& r1, const Rational& r2);
+bool operator>= (const Rational& r1, const Rational& r2);
+Rational operator+= (Rational& r1, const Rational& r2);
+Rational operator*= (Rational& r1, const Rational& r2);
+Rational operator/= (Rational& r1, const Rational& r2);
+Rational operator-= (Rational& r1, const Rational& r2);
+Rational operator++ (Rational& r, int);
+Rational operator++ (Rational& r);
+Rational operator-- (Rational& r, int);
+Rational operator-- (Rational& r);
 
 #endif
