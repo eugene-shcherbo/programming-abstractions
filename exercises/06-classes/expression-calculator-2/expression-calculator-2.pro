@@ -218,10 +218,10 @@ HEADERS *= "" \
     lib/rational.h \
     lib/rational.h \
     rational.h \
-    src/tokenscanner.h
+    src/expressioncalculator.h
 HEADERS = ""
 SOURCES *= "" \
-    src/tokenscanner.cpp
+    src/expressioncalculator.cpp
 SOURCES = ""
 
 # include various source .cpp files and header .h files in the build process
