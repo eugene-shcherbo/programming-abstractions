@@ -1,0 +1,10 @@
+# This is a test case consisting of a collection of cities linked in a star.
+
+Custom AityA (0, 0): Custom BityB, Custom CityC
+Custom BityB (-0.2, 0.2): Custom CityC, Custom DityD
+Custom CityC (0, 0.2):
+Custom DityD (0, 0.3): Custom EityE
+Custom EityE (0.3, 0.4): Custom FityF
+Custom FityF (-0.2, 0.5):
+
+Solution: 2
