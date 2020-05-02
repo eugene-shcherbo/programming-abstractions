@@ -3,6 +3,7 @@
 #include <climits>
 #include <iostream>
 #include "Disasters.h"
+#include "sparsegrid.h"
 using namespace std;
 
 bool canAllPatientsBeSeenHelper(Vector<Doctor>& doctors,
@@ -187,12 +188,44 @@ Set<string> makeSupplier(string city, const Set<string>& neighbors, Set<string>&
  * @param states All the states in the election (plus DC, if appropriate)
  * @param minStateIndex the lowest index in the states Vector that should be considered
  */
-MinInfo minPopularVoteToGetAtLeast(int electoralVotesNeeded, const Vector<State>& states, int minStateIndex) {
-    // [TODO: Delete these lines and implement this function!]
-    (void)(electoralVotesNeeded);
-    (void)(states);
-    (void)(minStateIndex);
-    return { 0, {} };
+MinInfo minPopularVoteToGetAtLeast(int electoralVotesNeeded, const Vector<State>& states, int minStateIndex, SparseGrid<MinInfo>& memos) {
+    if (electoralVotesNeeded <= 0) {
+        return { 0, {} };
+    } else if (minStateIndex == states.size()) {
+        return { INT_MAX, {} };
+    } else if (memos.isSet(electoralVotesNeeded, minStateIndex)) {
+        return memos[electoralVotesNeeded][minStateIndex];
+    } else {
+        State currState = states[minStateIndex];
+        int currPopularVotes = currState.popularVotes / 2 + 1;
+
+        MinInfo withCurrState = minPopularVoteToGetAtLeast(electoralVotesNeeded - currState.electoralVotes, states, minStateIndex + 1, memos);
+        MinInfo withoutCurrState = minPopularVoteToGetAtLeast(electoralVotesNeeded, states, minStateIndex + 1, memos);
+
+        MinInfo min;
+
+        if (withCurrState.popularVotesNeeded == withoutCurrState.popularVotesNeeded) {
+            min = withoutCurrState;
+        } else if (withCurrState.popularVotesNeeded + currPopularVotes < withoutCurrState.popularVotesNeeded) {
+            withCurrState.popularVotesNeeded += currPopularVotes;
+            withCurrState.statesUsed += currState;
+            min = withCurrState;
+        } else {
+            min = withoutCurrState;
+        }
+
+        memos[electoralVotesNeeded][minStateIndex] = min;
+
+        return min;
+    }
+}
+
+int majorityElectoral(const Vector<State>& states) {
+    int votesNeeded = 0 ;
+    for (State s : states) {
+        votesNeeded += s.electoralVotes ;
+    }
+    return votesNeeded / 2 + 1 ;
 }
 
 /**
@@ -204,7 +237,8 @@ MinInfo minPopularVoteToGetAtLeast(int electoralVotesNeeded, const Vector<State>
  * @return Information about how few votes you'd need to win the election.
  */
 MinInfo minPopularVoteToWin(const Vector<State>& states) {
-    // [TODO: Delete these lines and implement this function!]
-    (void)(states);
-    return { 0, {} };
+    int electoralNeeded = majorityElectoral(states);
+    SparseGrid<MinInfo> memos(electoralNeeded + 1, states.size());
+
+    return minPopularVoteToGetAtLeast(electoralNeeded, states, 0, memos);
 }
