@@ -37,8 +37,8 @@ PQueue *PQueue::createPQueue(PQueueType type) {
 		case LinkedList: return new LinkedListPQueue();
 		case Heap: return new HeapPQueue();
 		case BinomialHeap: return new BinomialHeapPQueue();
-		default: error("PQueue type not recognized.");
-				 return NULL;
+        default: error("PQueue type not recognized.");
+                 return NULL;
 
 	}
 }
@@ -53,7 +53,7 @@ PQueue *PQueue::createPQueue(PQueueType type) {
  * to the type-specific implementation that knows how to do the merge.
  */
 PQueue *PQueue::merge(PQueue *one, PQueue *two) {
-	if (one == NULL || two == NULL) {
+    if (one == nullptr || two == nullptr) {
 		error("PQueues passed to PQueue::merge must be non-NULL.");
 	}
 	
@@ -77,6 +77,6 @@ PQueue *PQueue::merge(PQueue *one, PQueue *two) {
 		return BinomialHeapPQueue::merge(dynamic_cast<BinomialHeapPQueue *>(one), dynamic_cast<BinomialHeapPQueue *>(two));
 	}
 	
-	return NULL;
+    return nullptr;
 }
 

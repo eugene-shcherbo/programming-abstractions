@@ -7,13 +7,20 @@ public:
 	LinkedListPQueue();
 	~LinkedListPQueue();
 	
-	static LinkedListPQueue *merge(LinkedListPQueue *one, LinkedListPQueue *two);
+    static LinkedListPQueue* merge(LinkedListPQueue* one, LinkedListPQueue* two);
 	
 	void enqueue(const std::string& elem);
     std::string extractMin();
     const std::string& peek() const;
 	
 private:
-	// provide data methods and helper methods to
-    // help realize the linked list-backed PQueue
+    struct Node {
+        std::string val;
+        Node* next;
+        Node* prev;
+    };
+
+    Node* head_;
+
+    void clear();
 };
