@@ -32,12 +32,16 @@ void VectorPQueue::enqueue(const string& elem) {
 VectorPQueue* VectorPQueue::merge(VectorPQueue* one, VectorPQueue* two) {
     VectorPQueue* res = new VectorPQueue();
 
-    for (int i = 0; i < one->size(); i++) {
-        res->enqueue(one->items_[i]);
+    if (one != nullptr) {
+        for (int i = 0; i < one->size(); i++) {
+            res->enqueue(one->items_[i]);
+        }
     }
 
-    for (int i = 0; i < two->size(); i++) {
-        res->enqueue(two->items_[i]);
+    if (two != nullptr) {
+        for (int i = 0; i < two->size(); i++) {
+            res->enqueue(two->items_[i]);
+        }
     }
 
     return res;

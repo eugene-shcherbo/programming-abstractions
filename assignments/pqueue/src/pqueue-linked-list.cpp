@@ -58,11 +58,10 @@ void LinkedListPQueue::enqueue(const string& el) {
 }
 
 LinkedListPQueue* LinkedListPQueue::merge(LinkedListPQueue* one, LinkedListPQueue* two) {
-    Node* left = one->head_;
-    Node* right = two->head_;
+    Node* left = one == nullptr ? nullptr : one->head_;
+    Node* right = two == nullptr ? two->head_ : two->head_;
 
     LinkedListPQueue* res = new LinkedListPQueue();
-    res->logSize = one->logSize + two->logSize;
     Node* resTail = res->head_;
 
     while (left != nullptr || right != nullptr) {
@@ -89,6 +88,7 @@ LinkedListPQueue* LinkedListPQueue::merge(LinkedListPQueue* one, LinkedListPQueu
             newNode->prev = resTail;
         }
         resTail = newNode;
+        res->logSize++;
     }
 
     return res;

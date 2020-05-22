@@ -7,13 +7,17 @@ public:
 	HeapPQueue();
 	~HeapPQueue();
 	
-	static HeapPQueue *merge(HeapPQueue *one, HeapPQueue *two);
+    static HeapPQueue* merge(HeapPQueue* one, HeapPQueue* two);
 	
 	void enqueue(const std::string& elem);
     std::string extractMin();
     const std::string& peek() const;
     
 private:
-    // provide data methods and helper methods to
-    // help realize the binary heap-backed PQueue
+    unsigned long capacity_;
+    std::string* elements_;
+
+    void minHeapify(int index);
+    void extendCapacity();
+    void add(std::string el);
 };
