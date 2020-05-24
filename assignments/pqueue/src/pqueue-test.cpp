@@ -11,6 +11,7 @@
 #include "hashset.h"
 #include "random.h"
 #include "console.h"
+#include "strlib.h"
 using namespace std;
 
 /**

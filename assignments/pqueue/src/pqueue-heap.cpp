@@ -15,14 +15,14 @@ HeapPQueue::~HeapPQueue() {
 }
 
 const string& HeapPQueue::peek() const {
-    if (logSize == 0) {
+    if (isEmpty()) {
         throw "error: attemptint to peek from the empty queue";
     }
     return elements_[0];
 }
 
 string HeapPQueue::extractMin() {
-    if (logSize == 0) {
+    if (isEmpty()) {
         throw "error: attemptint to extract from the empty queue";
     }
 
@@ -113,7 +113,7 @@ int parentIndex(int index) {
 
 
 void HeapPQueue::add(std::string el) {
-    if (logSize == capacity_) {
+    if (size() == capacity_) {
         extendCapacity();
     }
     elements_[logSize] = el;
