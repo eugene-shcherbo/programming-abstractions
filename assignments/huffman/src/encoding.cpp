@@ -1,5 +1,7 @@
 #include "encoding.h"
 #include "priorityqueue.h"
+#include "filelib.h"
+
 using namespace std;
 
 Map<int, int> buildFrequencyTable(istream& input) {
@@ -57,22 +59,65 @@ Map<int, string> buildEncodingMap(HuffmanNode* encodingTree) {
     return encodingMap;
 }
 
+void writeBits(const string& bits, obitstream& output) {
+    for (char b: bits) {
+        int bit = b == '1' ? 1 : 0;
+        output.writeBit(bit);
+    }
+}
+
 void encodeData(istream& input, const Map<int, string>& encodingMap, obitstream& output) {
-    // TODO: implement this function
+    while (true) {
+        int ch = input.get();
+        if (ch == EOF) {
+            break;
+        } else {
+            writeBits(encodingMap[ch], output);
+        }
+    }
+    writeBits(encodingMap[PSEUDO_EOF], output);
 }
 
 void decodeData(ibitstream& input, HuffmanNode* encodingTree, ostream& output) {
-    // TODO: implement this function
+    HuffmanNode* curr = encodingTree;
+    constexpr int EndOfBitStream = -1;
+    int bit;
+    while ((bit = input.readBit()) != EndOfBitStream) {
+        if (bit == 1) curr = curr->one;
+        else curr = curr->zero;
+
+        if (curr->character == PSEUDO_EOF) {
+            break;
+        } else if (curr->character != NOT_A_CHAR) {
+            output.put(curr->character);
+            curr = encodingTree;
+        }
+    }
 }
 
 void compress(istream& input, obitstream& output) {
-    // TODO: implement this function
+    Map<int, int> frequencyTable = buildFrequencyTable(input);
+    HuffmanNode* encodingTree = buildEncodingTree(frequencyTable);
+    Map<int, string> encodingMap = buildEncodingMap(encodingTree);
+    output << frequencyTable;
+    rewindStream(input);
+    encodeData(input, encodingMap, output);
 }
 
 void decompress(ibitstream& input, ostream& output) {
-    // TODO: implement this function
+    Map<int, int> frequencyTable;
+    input >> frequencyTable;
+    HuffmanNode* encodingTree = buildEncodingTree(frequencyTable);
+    decodeData(input, encodingTree, output);
 }
 
 void freeTree(HuffmanNode* node) {
-    // TODO: implement this function
+    if (node == nullptr) return;
+
+    if (!node->isLeaf()) {
+        freeTree(node->one);
+        freeTree(node->zero);
+    }
+
+    delete node;
 }
