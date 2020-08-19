@@ -94,7 +94,7 @@ TrailblazerGUI::TrailblazerGUI(std::string windowTitle) {
     }
     gcWorld->addItem(OTHER_FILE_LABEL);
     if (RANDOM_MAZE_OPTION_ENABLED) {
-        // gWorldChooser->addItem("Random Maze (tiny)");
+        gcWorld->addItem("Random Maze (tiny)");
         gcWorld->addItem("Random Maze (small)");
         gcWorld->addItem("Random Maze (medium)");
         gcWorld->addItem("Random Maze (large)");

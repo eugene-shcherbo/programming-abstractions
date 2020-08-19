@@ -6,6 +6,7 @@
 #include "bfsalgorithm.h"
 #include "dijkstraalgorithm.h"
 #include "astaralgorithm.h"
+#include "map.h"
 
 using namespace std;
 
@@ -56,11 +57,44 @@ Vector<Vertex*> aStar(BasicGraph& graph, Vertex* start, Vertex* end) {
     return AStarAlgorithm().search(graph, start, end);
 }
 
+int findClusterIndex(Vector<Set<Vertex*>>& clusters, Vertex* v) {
+    for (int i = 0; i < clusters.size(); i++) {
+        if (clusters[i].contains(v)) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 Set<Edge*> kruskal(BasicGraph& graph) {
-    // TODO: implement this function; remove these comments
-    //       (The function body code provided below is just a stub that returns
-    //        an empty set so that the overall project will compile.
-    //        You should remove that code and replace it with your implementation.)
+    Vector<Set<Vertex*>> clusters;
+    int numOfClusters = graph.getVertexSet().size();
+
+    for (Vertex* v: graph.getVertexSet()) {
+        Set<Vertex*> cluster;
+        cluster.add(v);
+        clusters.add(cluster);
+    }
+
+    PriorityQueue<Edge*> toProcess;
+    for (Edge* edge: graph.getEdgeSet()) {
+        toProcess.enqueue(edge, edge->weight);
+    }
+
     Set<Edge*> mst;
+    while (numOfClusters > 1) {
+        Edge* e = toProcess.dequeue();
+        int startClusterIndex = findClusterIndex(clusters, e->start);
+        int finishClusterIndex = findClusterIndex(clusters, e->finish);
+
+        if (startClusterIndex != finishClusterIndex) {
+            clusters[startClusterIndex].addAll(clusters[finishClusterIndex]);
+            clusters.remove(finishClusterIndex);
+            mst.add(e);
+            numOfClusters--;
+        }
+    }
+
     return mst;
 }
