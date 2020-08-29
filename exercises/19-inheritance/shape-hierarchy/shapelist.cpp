@@ -47,6 +47,13 @@ void ShapeList::draw(GWindow& window) const {
     }
 }
 
+Shape* ShapeList::getShapeAt(double x, double y) const {
+    for (int i = size() - 1; i >= 0; i--) {
+        if (get(i)->contains(x, y)) return get(i);
+    }
+    return nullptr;
+}
+
 void ShapeList::shiftRight(int from, int count) {
     int shifted = 0;
     for (int i = from - 1; i >= 0 && shifted < count; i--, shifted++) {

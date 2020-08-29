@@ -10,8 +10,8 @@ public:
     void moveToBack(Shape* sp);
     void moveForward(Shape* sp);
     void moveBackward(Shape* sp);
-
     void draw(GWindow& window) const;
+    Shape* getShapeAt(double x, double y) const;
 
 private:
     void shiftRight(int from, int count);

@@ -4,14 +4,50 @@
 #include "console.h"
 #include "shape.h"
 #include "shapelist.h"
+#include "goptionpane.h"
 
 using namespace std;
 
-void testContains(std::string shapeName, Shape* shape, double pointX, double pointY);
-void testContains(double width, double height, ShapeList& shapes, Shape* rp, Shape* op);
+void testGetShapeAt(ShapeList& shapes, GWindow& gw);
+void testMoving(ShapeList& shapes, GWindow& gw);
+ShapeList* createShapes(GWindow& gw);
 
 int main() {
     GWindow gw;
+
+    ShapeList* shapes = createShapes(gw);
+    shapes->draw(gw);
+    testMoving(*shapes, gw);
+    testGetShapeAt(*shapes, gw);
+
+    for (Shape* sp : *shapes) delete sp;
+
+    shapes->clear();
+
+    return 0;
+}
+
+void testGetShapeAt(ShapeList& shapes, GWindow& gw) {
+    while (true) {
+        GMouseEvent mouseEvent = waitForEvent(MOUSE_EVENT);
+
+        if (mouseEvent.getEventType() == MOUSE_DOUBLE_CLICKED) return;
+
+        if (mouseEvent.getEventType() == MOUSE_CLICKED) {
+            double x = mouseEvent.getX();
+            double y = mouseEvent.getY();
+
+            Shape* shape = shapes.getShapeAt(x, y);
+
+            if (shape != nullptr) {
+                shape->setColor(randomColorString());
+                shape->draw(gw);
+            }
+        }
+    }
+}
+
+ShapeList* createShapes(GWindow& gw) {
     double width = gw.getWidth();
     double height = gw.getHeight();
 
@@ -23,50 +59,31 @@ int main() {
     op->setColor("GRAY");
     sp->setColor("GREEN");
 
-    ShapeList shapes;
-    shapes.add(new Line(0, height / 2, width / 2, 0));
-    shapes.add(new Line(width / 2, 0, width, height / 2));
-    shapes.add(new Line(width, height / 2, width / 2, height));
-    shapes.add(new Line(width / 2, height, 0, height / 2));
-    shapes.add(rp);
-    shapes.add(op);
-    shapes.add(cp);
-    shapes.add(sp);
-    shapes.draw(gw);
+    ShapeList* shapes = new ShapeList();
+    shapes->add(new Line(0, height / 2, width / 2, 0));
+    shapes->add(new Line(width / 2, 0, width, height / 2));
+    shapes->add(new Line(width, height / 2, width / 2, height));
+    shapes->add(new Line(width / 2, height, 0, height / 2));
+    shapes->add(rp);
+    shapes->add(op);
+    shapes->add(cp);
+    shapes->add(sp);
 
-    shapes.moveForward(cp);
-    shapes.draw(gw);
-    shapes.moveBackward(cp);
-    shapes.draw(gw);
-
-    shapes.moveToBack(op);
-    shapes.draw(gw);
-    shapes.moveToFront(op);
-    shapes.draw(gw);
-
-    testContains(width, height, shapes, rp, op);
-
-    for (Shape* sp : shapes) {
-        delete sp;
-    }
-
-    shapes.clear();
-
-    return 0;
+    return shapes;
 }
 
-void testContains(std::string shapeName, Shape* shape, double pointX, double pointY) {
-    cout << shapeName << " contains point (" << pointX << ", " << pointY << ")? "
-         << boolToString(shape->contains(pointX, pointY)) << endl;
-}
+void testMoving(ShapeList& shapes, GWindow& gw) {
+    Shape* shape = shapes[1];
 
-void testContains(double width, double height, ShapeList& shapes, Shape* rp, Shape* op) {
-    double pointX = 1;
-    double pointY = height / 2;
+    shapes.moveForward(shape);
+    shapes.draw(gw);
+    shapes.moveBackward(shape);
+    shapes.draw(gw);
 
-    testContains("Rectangle", rp, pointX, pointY);
-    testContains("Oval", op, pointX, pointY);
-    testContains("Line", shapes[0], pointX, pointY);
+    shapes.moveToBack(shape);
+    shapes.draw(gw);
+    shapes.moveToFront(shape);
+    shapes.draw(gw);
 }
 
 

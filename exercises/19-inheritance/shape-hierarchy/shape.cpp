@@ -34,7 +34,7 @@ void Line::draw(GWindow& window) {
 }
 
 bool Line::contains(double x, double y) {
-    constexpr double halfPixel = .5;
+    constexpr double halfPixel = 5;
     double distance = distanceFrom(x, y);
     return abs(distance) <= halfPixel;
 }
@@ -42,13 +42,15 @@ bool Line::contains(double x, double y) {
 // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
 
 double Line::distanceFrom(double x, double y) {
+    double x1 = x_;
+    double y1 = y_;
     double x2 = x_ + dx;
     double y2 = y_ + dy;
 
-    double numerator = (y2 - y_) * x - (x2 - x_) * y + x2 * y_ - y2 * x_;
-    double denumerator = pow(y2 - y, 2) + pow(x2 - x_, 2);
+    double numerator = abs((dy * x) - (dx * y) + (x2 * y1) - (y2 * x1));
+    double denumerator = sqrt(dy * dy + dx * dx);
 
-    return abs(numerator) / sqrt(denumerator);
+    return numerator/denumerator;
 }
 
 Rect::Rect(double x, double y, double width, double height) {
@@ -85,7 +87,7 @@ void Oval::draw(GWindow& window) {
 
 bool Oval::contains(double x, double y) {
     double hCenter = x_ + width / 2;
-    double vCenter = y + height / 2;
+    double vCenter = y_ + height / 2;
 
     double rX = pow(width / 2, 2);
     double rY = pow(height / 2, 2);
