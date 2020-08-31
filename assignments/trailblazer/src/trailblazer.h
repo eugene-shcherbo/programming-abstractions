@@ -23,6 +23,8 @@
 #include "vector.h"
 #include "Color.h"
 
+typedef Set<Edge*> (*kruskalAlgorithm)(BasicGraph&);
+
 /*
  * The path-searching algorithms you must implement.
  */
@@ -36,6 +38,11 @@ Vector<Vertex*> aStar(BasicGraph& graph, Vertex* start, Vertex* end);
  * The minimum spanning tree / maze generation algorithm you must implement.
  */
 Set<Edge*> kruskal(BasicGraph& graph);
+
+/*
+ * The MST / maze generation algorithm using Disjoint Set implemented via Linked List
+ */
+Set<Edge*> kruskalDisjointLinkedList(BasicGraph& graph);
 
 /*
  * Returns a 'heuristic' value, or rough estimation, of the distance between

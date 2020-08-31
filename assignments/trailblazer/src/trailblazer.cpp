@@ -7,6 +7,7 @@
 #include "dijkstraalgorithm.h"
 #include "astaralgorithm.h"
 #include "map.h"
+#include "disjointsets.h"
 
 using namespace std;
 
@@ -92,6 +93,33 @@ Set<Edge*> kruskal(BasicGraph& graph) {
             clusters[startClusterIndex].addAll(clusters[finishClusterIndex]);
             clusters.remove(finishClusterIndex);
             mst.add(e);
+            numOfClusters--;
+        }
+    }
+
+    return mst;
+}
+
+Set<Edge*> kruskalDisjointLinkedList(BasicGraph& graph) {
+    auto clusters = new LinkedListDisjointSets<Vertex>;
+    int numOfClusters = graph.getVertexSet().size();
+
+    for (Vertex* v: graph.getVertexSet()) {
+        clusters->makeSet(v);
+    }
+
+    PriorityQueue<Edge*> toProcess;
+    for (Edge* edge: graph.getEdgeSet()) {
+        toProcess.enqueue(edge, edge->weight);
+    }
+
+    Set<Edge*> mst;
+    while (numOfClusters > 1) {
+        Edge* e = toProcess.dequeue();
+
+        if (clusters->findSet(e->start) != clusters->findSet(e->finish)) {
+            mst.add(e);
+            clusters->unionSets(e->start, e->finish);
             numOfClusters--;
         }
     }

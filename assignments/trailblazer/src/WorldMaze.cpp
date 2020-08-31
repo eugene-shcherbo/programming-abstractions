@@ -20,7 +20,7 @@
 const int WorldMaze::MAZE_WALL = 0;
 const int WorldMaze::MAZE_FLOOR = 1;
 
-void WorldMaze::createRandomMaze(WorldSize size) {
+void WorldMaze::createRandomMaze(WorldSize size, const kruskalAlgorithm& mazeGenerationAlg) {
     clearSelection(/* redraw */ false);
     
     int rowsCols = getRowsCols(size) / 2 + 1;
@@ -39,7 +39,7 @@ void WorldMaze::createRandomMaze(WorldSize size) {
     }
     
     // run the student's Kruskal algorithm to get a minimum spanning tree (MST)
-    Set<Edge*> mst = kruskal(*graph);
+    Set<Edge*> mst = mazeGenerationAlg(*graph);
     
     // convert the MST/graph back into a maze grid
     // (insert a 'wall' between any neighbors that do not have a connecting edge)

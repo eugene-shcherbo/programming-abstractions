@@ -19,6 +19,7 @@
 #include "gwindow.h"
 #include "observable.h"
 #include "WorldAbstract.h"
+#include "trailblazer.h"
 
 class TrailblazerGUI : public Observer {
 public:
@@ -106,7 +107,7 @@ private:
     /*
      * Called when the user wants to create a randomly generated maze.
      */
-    void generateRandomMaze(WorldSize size);
+    void generateRandomMaze(WorldSize size, const kruskalAlgorithm& mazeGenerationAlg);
     
     /*
      * Returns all files in the current directory that start with the given

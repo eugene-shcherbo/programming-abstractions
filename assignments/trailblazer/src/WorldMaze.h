@@ -16,6 +16,7 @@
 #define _WorldMaze_h
 
 #include "WorldGrid.h"
+#include "trailblazer.h"
 
 class WorldMaze : public WorldGrid {
 public:
@@ -32,7 +33,7 @@ public:
     // implementations of pure virtual functions from World and WorldGrid classes
     // (see World.h and WorldGrid.h for documentation)
     virtual double costFunction(int r1, int c1, int r2, int c2) const;
-    virtual void createRandomMaze(WorldSize size);
+    virtual void createRandomMaze(WorldSize size, const kruskalAlgorithm& mazeGenerationAlg);
     virtual std::string getType() const;
     virtual int getRowsCols(WorldSize size) const;
     virtual double heuristic(int r1, int c1, int r2, int c2);

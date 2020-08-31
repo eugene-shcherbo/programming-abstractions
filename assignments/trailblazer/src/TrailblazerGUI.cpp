@@ -54,6 +54,11 @@ const bool RANDOM_MAZE_OPTION_ENABLED = true;
 
 // function implementations
 
+kruskalAlgorithm createKruskalAlgorithm(std::string worldFile) {
+    if (stringContains(worldFile, "Linked List")) return kruskalDisjointLinkedList;
+    else return kruskal;
+}
+
 /*
  * Initializes state of the GUI subsystem.
  */
@@ -99,6 +104,9 @@ TrailblazerGUI::TrailblazerGUI(std::string windowTitle) {
         gcWorld->addItem("Random Maze (medium)");
         gcWorld->addItem("Random Maze (large)");
         gcWorld->addItem("Random Maze (huge)");
+        gcWorld->addItem("Random Maze DS Linked List (tiny)");
+        gcWorld->addItem("Random Maze DS Linked List (large)");
+        gcWorld->addItem("Random Maze DS Linked List (huge)");
         // gWorldChooser->addItem("Random Terrain (tiny)");
         // gWorldChooser->addItem("Random Terrain (small)");
         // gWorldChooser->addItem("Random Terrain (medium)");
@@ -173,7 +181,8 @@ void TrailblazerGUI::loadCurrentlySelectedWorld() {
     if (startsWith(worldFile, "Random")) {
         // generate a random maze
         WorldSize size = getWorldSize(worldFile);
-        generateRandomMaze(size);
+        kruskalAlgorithm mazeGenerationAlg = createKruskalAlgorithm(worldFile);
+        generateRandomMaze(size, mazeGenerationAlg);
     } else {
         // non-random world; just load from a file
         loadWorld(worldFile);
@@ -273,7 +282,7 @@ bool TrailblazerGUI::ensureStartEndVerticesSelected() {
     return (start && end);
 }
 
-void TrailblazerGUI::generateRandomMaze(WorldSize size) {
+void TrailblazerGUI::generateRandomMaze(WorldSize size, const kruskalAlgorithm& mazeGenerationAlg) {
     if (world) {
         delete world;
         gWindow->repaint();
@@ -283,7 +292,7 @@ void TrailblazerGUI::generateRandomMaze(WorldSize size) {
     std::cout << "Generating a random maze ..." << std::endl;
     
     WorldMaze* maze = new WorldMaze(gWindow, size);
-    maze->createRandomMaze(size);
+    maze->createRandomMaze(size, mazeGenerationAlg);
     world = maze;
     setCurrentWorld(world);
     snapConsoleLocation();
