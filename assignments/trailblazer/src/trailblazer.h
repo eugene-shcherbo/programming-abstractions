@@ -45,6 +45,11 @@ Set<Edge*> kruskal(BasicGraph& graph);
 Set<Edge*> kruskalDisjointLinkedList(BasicGraph& graph);
 
 /*
+ * The MST / maze generation algorithm using Disjoint Set implemented via Rooted trees
+ */
+Set<Edge*> kruskalDisjointForest(BasicGraph& graph);
+
+/*
  * Returns a 'heuristic' value, or rough estimation, of the distance between
  * this vertex and the given other vertex.
  * The heuristic function is guaranteed to be an 'admissible heuristic',

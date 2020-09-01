@@ -126,3 +126,30 @@ Set<Edge*> kruskalDisjointLinkedList(BasicGraph& graph) {
 
     return mst;
 }
+
+Set<Edge*> kruskalDisjointForest(BasicGraph& graph) {
+    auto clusters = new DisjointSetsForest<Vertex>;
+    int numOfClusters = graph.getVertexSet().size();
+
+    for (Vertex* v: graph.getVertexSet()) {
+        clusters->makeSet(v);
+    }
+
+    PriorityQueue<Edge*> toProcess;
+    for (Edge* edge: graph.getEdgeSet()) {
+        toProcess.enqueue(edge, edge->weight);
+    }
+
+    Set<Edge*> mst;
+    while (numOfClusters > 1) {
+        Edge* e = toProcess.dequeue();
+
+        if (clusters->findSet(e->start) != clusters->findSet(e->finish)) {
+            mst.add(e);
+            clusters->unionSets(e->start, e->finish);
+            numOfClusters--;
+        }
+    }
+
+    return mst;
+}

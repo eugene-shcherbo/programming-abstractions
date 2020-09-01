@@ -56,6 +56,7 @@ const bool RANDOM_MAZE_OPTION_ENABLED = true;
 
 kruskalAlgorithm createKruskalAlgorithm(std::string worldFile) {
     if (stringContains(worldFile, "Linked List")) return kruskalDisjointLinkedList;
+    else if (stringContains(worldFile, "Forest")) return kruskalDisjointForest;
     else return kruskal;
 }
 
@@ -107,6 +108,9 @@ TrailblazerGUI::TrailblazerGUI(std::string windowTitle) {
         gcWorld->addItem("Random Maze DS Linked List (tiny)");
         gcWorld->addItem("Random Maze DS Linked List (large)");
         gcWorld->addItem("Random Maze DS Linked List (huge)");
+        gcWorld->addItem("Random Maze DS Forest (tiny)");
+        gcWorld->addItem("Random Maze DS Forest (large)");
+        gcWorld->addItem("Random Maze DS Forest (huge)");
         // gWorldChooser->addItem("Random Terrain (tiny)");
         // gWorldChooser->addItem("Random Terrain (small)");
         // gWorldChooser->addItem("Random Terrain (medium)");
