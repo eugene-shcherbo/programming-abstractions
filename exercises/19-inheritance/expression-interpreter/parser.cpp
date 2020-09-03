@@ -22,7 +22,7 @@ Expression* readE(TokenScanner& scanner, int prec) {
         int tPrec = precedence(token);
         if (tPrec <= prec) break;
         Expression* rhs = readE(scanner, tPrec);
-        exp = new CompoundExp(token, exp, rhs);
+        exp = new BinaryExp(token, exp, rhs);
     }
     scanner.saveToken(token);
     return exp;
@@ -32,7 +32,13 @@ Expression* readT(TokenScanner& scanner) {
     std::string token = scanner.nextToken();
     TokenScanner::TokenType type = scanner.getTokenType(token);
     if (type == TokenScanner::WORD) return new IdentifierExp(token);
-    if (type == TokenScanner::NUMBER) return new ConstantExp(stringToInteger(token));
+    if (type == TokenScanner::NUMBER) return new ConstantExp(stringToDouble(token));
+
+    if (token == "-") {
+        Expression* operand = readT(scanner);
+        return new UnaryExp(token, operand);
+    }
+
     if (token != "(") error("Illegal term in expression");
     Expression* exp = readE(scanner, 0);
     if (scanner.nextToken() != ")") {

@@ -6,18 +6,18 @@
 
 class EvaluationContext;
 
-enum ExpressionType { CONSTANT, IDENTIFIER, COMPOUND };
+enum ExpressionType { CONSTANT, IDENTIFIER, BINARY, UNARY };
 
 class Expression {
 public:
     Expression();
     virtual ~Expression();
 
-    virtual int eval(EvaluationContext& context) const = 0;
+    virtual double eval(EvaluationContext& context) const = 0;
     virtual std::string toString() const = 0;
     virtual ExpressionType getType() const = 0;
 
-    virtual int getConstantValue() const;
+    virtual double getConstantValue() const;
     virtual std::string getIdentifierName() const;
     virtual std::string getOperator() const;
     virtual Expression* getLhs() const;
@@ -27,15 +27,15 @@ public:
 class ConstantExp : public Expression {
 
 public:
-    ConstantExp(int value);
+    ConstantExp(double value);
 
-    int eval(EvaluationContext &context) const override;
+    double eval(EvaluationContext& context) const override;
     std::string toString() const override;
     ExpressionType getType() const override;
-    int getConstantValue() const override;
+    double getConstantValue() const override;
 
 private:
-    int value;
+    double value;
 };
 
 class IdentifierExp : public Expression {
@@ -43,7 +43,7 @@ class IdentifierExp : public Expression {
 public:
     IdentifierExp(std::string name);
 
-    int eval(EvaluationContext &context) const override;
+    double eval(EvaluationContext& context) const override;
     std::string toString() const override;
     ExpressionType getType() const override;
     std::string getIdentifierName() const override;
@@ -52,34 +52,50 @@ private:
     std::string name;
 };
 
-class CompoundExp : public Expression {
+class BinaryExp : public Expression {
 
 public:
-    CompoundExp(std::string op, Expression* lhs, Expression* rhs);
+    BinaryExp(std::string op, Expression* lhs, Expression* rhs);
 
-    ~CompoundExp() override;
-    int eval(EvaluationContext &context) const override;
+    ~BinaryExp() override;
+    double eval(EvaluationContext& context) const override;
     std::string toString() const override;
     ExpressionType getType() const override;
     std::string getOperator() const override;
     Expression * getLhs() const override;
     Expression * getRhs() const override;
-
 private:
     std::string op;
     Expression* lhs;
     Expression* rhs;
 };
 
+class UnaryExp : public Expression {
+
+public:
+    UnaryExp(std::string op, Expression* rhs);
+
+    ~UnaryExp() override;
+    double eval(EvaluationContext& context) const override;
+    std::string toString() const override;
+    ExpressionType getType() const override;
+    std::string getOperator() const override;
+    Expression* getRhs() const override;
+
+private:
+    std::string op;
+    Expression* rhs;
+};
+
 class EvaluationContext {
 
 public:
-    void setValue(std::string var, int value);
-    int getValue(std::string name);
+    void setValue(std::string var, double value);
+    double getValue(std::string name);
     bool isDefined(std::string var);
 
 private:
-    Map<std::string, int> varTable;
+    Map<std::string, double> varTable;
 };
 
 #endif // EXP_H

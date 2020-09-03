@@ -9,7 +9,7 @@ Expression::Expression() {}
 
 Expression::~Expression() {}
 
-int Expression::getConstantValue() const {
+double Expression::getConstantValue() const {
     error("getConstantValue: Illegal expression type");
     return 0;
 }
@@ -36,19 +36,19 @@ Expression* Expression::getRhs() const {
 
 /* Constant Expression */
 
-ConstantExp::ConstantExp(int val) {
+ConstantExp::ConstantExp(double val) {
     this->value = val;
 }
 
-int ConstantExp::eval(EvaluationContext& context) const {
+double ConstantExp::eval(EvaluationContext& context) const {
     return value;
 }
 
 std::string ConstantExp::toString() const {
-    return integerToString(value);
+    return doubleToString(value);
 }
 
-int ConstantExp::getConstantValue() const {
+double ConstantExp::getConstantValue() const {
     return value;
 }
 
@@ -58,12 +58,12 @@ ExpressionType ConstantExp::getType() const {
 
 /* Identifier Expression */
 
-IdentifierExp::IdentifierExp(std::string name) {
-    this->name = name;
+IdentifierExp::IdentifierExp(std::string varName) {
+    name = varName;
 }
 
-int IdentifierExp::eval(EvaluationContext& context) const {
-    if (!context.isDefined(name)) error(name + "is undefined");
+double IdentifierExp::eval(EvaluationContext& context) const {
+    if (!context.isDefined(name)) error(name + " is undefined");
     return context.getValue(name);
 }
 
@@ -79,75 +79,114 @@ ExpressionType IdentifierExp::getType() const {
     return IDENTIFIER;
 }
 
-/* Compound Expression */
+/* Binary Expression */
 
-CompoundExp::~CompoundExp() {
+BinaryExp::~BinaryExp() {
     delete lhs;
     delete rhs;
 }
 
-CompoundExp::CompoundExp(std::string op, Expression* lhs, Expression* rhs) {
+BinaryExp::BinaryExp(std::string op, Expression* lhs, Expression* rhs) {
     this->op = op;
     this->lhs = lhs;
     this->rhs = rhs;
 }
 
-int evalOperator(int left, int right, std::string op) {
+double evalBinaryOperator(double left, double right, std::string op) {
     if (op == "+") return left + right;
     if (op == "-") return left - right;
     if (op == "*") return left * right;
 
     if (op == "/") {
-        if (right == 0) error("Division by 0");
+        if (right == .0) error("Division by 0");
         return left / right;
     }
 
     if (op == "%") {
-        if (right == 0) error("Divistion by 0");
-        return left % right;
+        if (right == .0) error("Divistion by 0");
+        return static_cast<int>(left) % static_cast<int>(right);
     }
 
     error("Illegal operator in expression");
     return 0;
 }
 
-int CompoundExp::eval(EvaluationContext& context) const {
-    int right = rhs->eval(context);
+double BinaryExp::eval(EvaluationContext& context) const {
+    double right = rhs->eval(context);
     if (op == "=") {
         context.setValue(lhs->getIdentifierName(), right);
         return right;
     }
-    int left = lhs->eval(context);
-    return evalOperator(left, right, op);
+    double left = lhs->eval(context);
+    return evalBinaryOperator(left, right, op);
 
 }
 
-std::string CompoundExp::toString() const {
+std::string BinaryExp::toString() const {
     return '(' + lhs->toString() + ' ' + op + ' ' + rhs->toString() + ')';
 }
 
-std::string CompoundExp::getOperator() const {
+std::string BinaryExp::getOperator() const {
     return op;
 }
 
-Expression* CompoundExp::getLhs() const {
+Expression* BinaryExp::getLhs() const {
     return lhs;
 }
 
-Expression* CompoundExp::getRhs() const {
+Expression* BinaryExp::getRhs() const {
     return rhs;
 }
 
-ExpressionType CompoundExp::getType() const {
-    return COMPOUND;
+ExpressionType BinaryExp::getType() const {
+    return BINARY;
+}
+
+/* Unary expression */
+
+UnaryExp::~UnaryExp() {
+    delete rhs;
+}
+
+UnaryExp::UnaryExp(std::string op, Expression* rhs) {
+    this->op = op;
+    this->rhs = rhs;
+}
+
+double evalUnaryOperator(double operand, std::string op) {
+    if (op == "-") return -operand;
+    error("Illegal operator in expression");
+    return 0;
+}
+
+double UnaryExp::eval(EvaluationContext& context) const {
+    double right = rhs->eval(context);
+    return evalUnaryOperator(right, op);
+
+}
+
+std::string UnaryExp::toString() const {
+    return op + rhs->toString();
+}
+
+std::string UnaryExp::getOperator() const {
+    return op;
+}
+
+Expression* UnaryExp::getRhs() const {
+    return rhs;
+}
+
+ExpressionType UnaryExp::getType() const {
+    return UNARY;
 }
 
 /* Evaluation Context */
-void EvaluationContext::setValue(std::string var, int value) {
+void EvaluationContext::setValue(std::string var, double value) {
     varTable[var] = value;
 }
 
-int EvaluationContext::getValue(std::string name) {
+double EvaluationContext::getValue(std::string name) {
     return varTable[name];
 }
 
