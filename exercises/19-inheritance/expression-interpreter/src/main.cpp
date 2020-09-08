@@ -10,45 +10,30 @@
 
 using namespace std;
 
-bool expMatch(Expression* exp1, Expression* exp2);
-Expression* createFromString(string exp);
-void testExpMatch(string expInput1, string expInput2);
-void testExpMatch();
-
-void yieldVariables(Expression* exp, Set<string>& variables);
-void listVariables(Expression* exp);
-
-Expression* changeVariable(Expression* exp, std::string oldName, std::string newName);
+void testMainFlow();
 void testChangeVariable();
+void testExpMatch();
+void testExpMatch(string expInput1, string expInput2);
+void testFoldConstants();
+void testFoldConstants(string origexp);
+
+/* Expression Utility Functions */
+
+Expression* createFromString(string exp);
+void yieldVariables(Expression* exp, Set<string>& variables);
+
+/* Expression Helper Functions */
+
+void listVariables(Expression* exp);
+Expression* changeVariable(Expression* exp, std::string oldName, std::string newName);
+bool expMatch(Expression* exp1, Expression* exp2);
+Expression* foldConstants(const Expression* exp);
 
 int main() {
-    /*EvaluationContext context;
-    TokenScanner scanner;
-    Expression* exp;
-    scanner.ignoreWhitespace();
-    scanner.scanNumbers();
-
-    while (true) {
-        exp = nullptr;
-        try {
-            string line;
-            cout << "=> ";
-            getline(cin, line);
-            if (line == "quit") break;
-            scanner.setInput(line);
-            exp = parseExp(scanner);
-            double value = exp->eval(context);
-            cout << value << endl;
-            cout << "Used variables: " << endl;
-            listVariables(exp);
-        } catch (ErrorException& ex) {
-            cerr << "Error: " << ex.getMessage() << endl;
-        }
-        if (exp != nullptr) delete exp;
-    }
-
-    testChangeVariable();*/
+    testMainFlow();
+    testChangeVariable();
     testExpMatch();
+    testFoldConstants();
 
     return 0;
 }
@@ -58,55 +43,16 @@ Expression* changeVariable(Expression* exp, std::string oldName, std::string new
 
     if (expType == IDENTIFIER) {
         std::string currName = exp->getIdentifierName();
-        return new IdentifierExp(currName == oldName ? newName : currName);
+        return Expression::identifier(currName == oldName ? newName : currName);
     } else if (expType == BINARY) {
         Expression* changedLhs = changeVariable(exp->getLhs(), oldName, newName);
         Expression* changedRhs = changeVariable(exp->getRhs(), oldName, newName);
-        return new BinaryExp(exp->getOperator(), changedLhs, changedRhs);
+        return Expression::binary(exp->getOperator(), changedLhs, changedRhs);
     } else if (expType == UNARY) {
         Expression* changedOperand = changeVariable(exp->getRhs(), oldName, newName);
-        return new UnaryExp(exp->getOperator(), changedOperand);
+        return Expression::unary(exp->getOperator(), changedOperand);
     } else {
-        return new ConstantExp(exp->getConstantValue());
-    }
-}
-
-void testChangeVariable() {
-    cout << "---Change variable test---" << endl;
-    EvaluationContext context;
-    TokenScanner scanner;
-    scanner.ignoreWhitespace();
-    scanner.scanNumbers();
-
-    Vector<std::string> expressions;
-    expressions += "a = 3";
-    expressions += "y = 5";
-    expressions += "x = 42";
-    expressions += "z = 3 * x * x - 4 * x - 2 * a + y";
-
-    for (int i = 0; i < expressions.size(); i++) {
-        Expression* exp = nullptr;
-
-        try {
-            scanner.setInput(expressions[i]);
-            exp = parseExp(scanner);
-            exp->eval(context);
-
-            if (i == expressions.size() - 1) {
-                cout << "Given: " << exp->toString() << endl << endl;
-                cout << "change: 'x' to 't'" << endl << endl;
-
-                Expression* newExpr = changeVariable(exp, "x", "t");
-
-                cout << "new: " << newExpr->toString() << endl;
-                cout << "old: " << exp->toString() << endl << endl;
-                delete newExpr;
-            }
-        } catch (ErrorException& ex) {
-            cerr << "Error: " << ex.getMessage() << endl;
-        }
-
-        if (exp != nullptr) delete exp;
+        return Expression::constant(exp->getConstantValue());
     }
 }
 
@@ -116,17 +62,6 @@ void listVariables(Expression* exp) {
 
     for (string variable : variables) {
         cout << variable << endl;
-    }
-}
-
-void yieldVariables(Expression* exp, Set<string>& variables) {
-    if (exp->getType() == IDENTIFIER) {
-        variables.add(exp->getIdentifierName());
-    } else if (exp->getType() == BINARY) {
-        yieldVariables(exp->getLhs(), variables);
-        yieldVariables(exp->getRhs(), variables);
-    } else if (exp->getType() == UNARY) {
-        yieldVariables(exp->getRhs(), variables);
     }
 }
 
@@ -154,6 +89,77 @@ bool expMatch(Expression* exp1, Expression* exp2) {
     return false;
 }
 
+Expression* foldConstantsInCompoundExp(const Expression* exp) {
+    Expression* lhs = foldConstants(exp->getLhs());
+    Expression* rhs = foldConstants(exp->getRhs());
+
+    if (lhs->getType() == CONSTANT && rhs->getType() == CONSTANT) {
+        EvaluationContext context;
+        return Expression::constant(exp->eval(context));
+    }
+
+    if (exp->getType() == BINARY) {
+        return Expression::binary(exp->getOperator(), lhs, rhs);
+    } else {
+        return Expression::unary(exp->getOperator(), rhs);
+    }
+}
+
+Expression* foldConstants(const Expression* exp) {
+    if (exp->getType() == CONSTANT) {
+        return Expression::constant(exp->getConstantValue());
+    } else if (exp->getType() == IDENTIFIER) {
+        return Expression::identifier(exp->getIdentifierName());
+    }
+
+    return foldConstantsInCompoundExp(exp);
+}
+
+void testMainFlow() {
+    EvaluationContext context;
+    TokenScanner scanner;
+    Expression* exp;
+    scanner.ignoreWhitespace();
+    scanner.scanNumbers();
+
+    while (true) {
+        exp = nullptr;
+        try {
+            string line;
+            cout << "=> ";
+            getline(cin, line);
+            if (line == "quit") break;
+            scanner.setInput(line);
+            exp = parseExp(scanner);
+            double value = exp->eval(context);
+            cout << value << endl;
+            cout << "Used variables: " << endl;
+            listVariables(exp);
+        } catch (ErrorException& ex) {
+            cerr << "Error: " << ex.getMessage() << endl;
+        }
+        if (exp != nullptr) delete exp;
+    }
+}
+
+void testChangeVariable() {
+    cout << "---Change variable test---" << endl;
+
+    string testExp = "z = 3 * x * x - 4 * x - 2 * a + y";
+    Expression* exp = createFromString(testExp);
+
+    cout << "Given: " << exp->toString() << endl << endl;
+    cout << "change: 'x' to 't'" << endl << endl;
+
+    Expression* newExpr = changeVariable(exp, "x", "t");
+
+    cout << "new: " << newExpr->toString() << endl;
+    cout << "old: " << exp->toString() << endl << endl;
+
+    delete newExpr;
+    delete exp;
+}
+
 void testExpMatch() {
     cout << "---Expression match test----" << endl;
 
@@ -177,6 +183,25 @@ void testExpMatch(string expInput1, string expInput2) {
     delete exp2;
 }
 
+void testFoldConstants() {
+    cout << "--- Fold Constants test ---" << endl;
+    testFoldConstants("1 + 2 + 3");
+    testFoldConstants("24 * 60 * 60 * sec");
+    testFoldConstants("24 + 3 * x");
+    testFoldConstants("24 * -60 * 60 * sec");
+}
+
+void testFoldConstants(string origexp) {
+    Expression* e1 = createFromString(origexp);
+    Expression* e2 = foldConstants(e1);
+
+    cout << "Was: " << e1->toString() << endl;
+    cout << "Now: " << e2->toString() << endl;
+
+    delete e1;
+    delete e2;
+}
+
 Expression* createFromString(string exp) {
     TokenScanner scanner;
     scanner.ignoreWhitespace();
@@ -185,3 +210,13 @@ Expression* createFromString(string exp) {
     return parseExp(scanner);
 }
 
+void yieldVariables(Expression* exp, Set<string>& variables) {
+    if (exp->getType() == IDENTIFIER) {
+        variables.add(exp->getIdentifierName());
+    } else if (exp->getType() == BINARY) {
+        yieldVariables(exp->getLhs(), variables);
+        yieldVariables(exp->getRhs(), variables);
+    } else if (exp->getType() == UNARY) {
+        yieldVariables(exp->getRhs(), variables);
+    }
+}

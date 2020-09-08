@@ -22,12 +22,6 @@ public:
     virtual std::string getOperator() const;
     virtual Expression* getLhs() const;
     virtual Expression* getRhs() const;
-
-    static Expression* newFrom(Expression* exp);
-    static Expression* constant(double val);
-    static Expression* binary(std::string op, Expression* lhs, Expression* rhs);
-    static Expression* unary(std::string op, Expression* rhs);
-    static Expression* identifier(std::string name);
 };
 
 class ConstantExp : public Expression {
@@ -68,8 +62,8 @@ public:
     std::string toString() const override;
     ExpressionType getType() const override;
     std::string getOperator() const override;
-    Expression* getLhs() const override;
-    Expression* getRhs() const override;
+    Expression * getLhs() const override;
+    Expression * getRhs() const override;
 private:
     std::string op;
     Expression* lhs;
@@ -87,7 +81,6 @@ public:
     ExpressionType getType() const override;
     std::string getOperator() const override;
     Expression* getRhs() const override;
-    Expression* getLhs() const override;
 
 private:
     std::string op;

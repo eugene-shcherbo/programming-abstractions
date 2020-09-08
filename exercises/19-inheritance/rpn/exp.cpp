@@ -34,34 +34,6 @@ Expression* Expression::getRhs() const {
     return nullptr;
 }
 
-Expression* Expression::newFrom(Expression* exp) {
-    if (exp->getType() == CONSTANT) {
-        return constant(exp->getConstantValue());
-    } else if (exp->getType() == IDENTIFIER) {
-        return identifier(exp->getIdentifierName());
-    } else if (exp->getType() == BINARY) {
-        return binary(exp->getOperator(), exp->getLhs(), exp->getRhs());
-    } else {
-        return unary(exp->getOperator(), exp->getRhs());
-    }
-}
-
-Expression* Expression::constant(double val) {
-    return new ConstantExp(val);
-}
-
-Expression* Expression::binary(std::string op, Expression* lhs, Expression* rhs) {
-    return new BinaryExp(op, lhs, rhs);
-}
-
-Expression* Expression::unary(std::string op, Expression* rhs) {
-    return new UnaryExp(op, rhs);
-}
-
-Expression* Expression::identifier(std::string name) {
-    return new IdentifierExp(name);
-}
-
 /* Constant Expression */
 
 ConstantExp::ConstantExp(double val) {
@@ -203,10 +175,6 @@ std::string UnaryExp::getOperator() const {
 
 Expression* UnaryExp::getRhs() const {
     return rhs;
-}
-
-Expression* UnaryExp::getLhs() const {
-    return new ConstantExp(.0);
 }
 
 ExpressionType UnaryExp::getType() const {
