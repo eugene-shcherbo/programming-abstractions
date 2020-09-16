@@ -19,7 +19,7 @@ Expression* readE(TokenScanner& scanner, int prec) {
     std::string token;
     while (true) {
         token = scanner.nextToken();
-        int tPrec = precedence(token);
+        int tPrec = calcPrecedence(token);
         if (tPrec <= prec) break;
         Expression* rhs = readE(scanner, tPrec);
         exp = new BinaryExp(token, exp, rhs);
@@ -47,9 +47,9 @@ Expression* readT(TokenScanner& scanner) {
     return exp;
 }
 
-int precedence(std::string token) {
-    if (token == "=") return 1;
-    if (token == "+" || token == "-") return 2;
-    if (token == "*" || token == "/" || token == "%") return 3;
+int calcPrecedence(std::string op) {
+    if (op == "=") return 1;
+    if (op == "+" || op == "-") return 2;
+    if (op == "*" || op == "/" || op == "%") return 3;
     return 0;
 }

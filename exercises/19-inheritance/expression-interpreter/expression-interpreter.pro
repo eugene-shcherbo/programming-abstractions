@@ -213,6 +213,7 @@ DISTFILES *= ""
 DISTFILES = ""
 HEADERS *= "" \
     exp.h \
+    exputil.h \
     nimgame.h \
     parser.h \
     shape.h \
@@ -230,6 +231,7 @@ HEADERS *= "" \
 HEADERS = ""
 SOURCES *= "" \
     exp.cpp \
+    exputil.cpp \
     nimgame.cpp \
     parser.cpp \
     shape.cpp \

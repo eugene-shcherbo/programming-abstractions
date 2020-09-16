@@ -105,4 +105,6 @@ private:
     Map<std::string, double> varTable;
 };
 
+int calcPrecedence(std::string op);
+
 #endif // EXP_H

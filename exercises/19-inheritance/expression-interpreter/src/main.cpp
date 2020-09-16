@@ -4,9 +4,11 @@
 #include "simpio.h"
 #include "tokenscanner.h"
 #include "error.h"
+#include "strlib.h"
 #include "set.h"
 #include "exp.h"
 #include "parser.h"
+#include "exputil.h"
 
 using namespace std;
 
@@ -16,103 +18,33 @@ void testExpMatch();
 void testExpMatch(string expInput1, string expInput2);
 void testFoldConstants();
 void testFoldConstants(string origexp);
+void testUnparse(string expr);
+void testUnparse();
+void testDifferentiate();
+void testDifferentiate(string expr);
 
 /* Expression Utility Functions */
 
 Expression* createFromString(string exp);
-void yieldVariables(Expression* exp, Set<string>& variables);
-
-/* Expression Helper Functions */
-
-void listVariables(Expression* exp);
-Expression* changeVariable(Expression* exp, std::string oldName, std::string newName);
-bool expMatch(Expression* exp1, Expression* exp2);
-Expression* foldConstants(const Expression* exp);
 
 int main() {
     testMainFlow();
     testChangeVariable();
     testExpMatch();
     testFoldConstants();
+    testUnparse();
+    testDifferentiate();
 
     return 0;
 }
 
-Expression* changeVariable(Expression* exp, std::string oldName, std::string newName) {
-    ExpressionType expType = exp->getType();
-
-    if (expType == IDENTIFIER) {
-        std::string currName = exp->getIdentifierName();
-        return Expression::identifier(currName == oldName ? newName : currName);
-    } else if (expType == BINARY) {
-        Expression* changedLhs = changeVariable(exp->getLhs(), oldName, newName);
-        Expression* changedRhs = changeVariable(exp->getRhs(), oldName, newName);
-        return Expression::binary(exp->getOperator(), changedLhs, changedRhs);
-    } else if (expType == UNARY) {
-        Expression* changedOperand = changeVariable(exp->getRhs(), oldName, newName);
-        return Expression::unary(exp->getOperator(), changedOperand);
-    } else {
-        return Expression::constant(exp->getConstantValue());
-    }
-}
-
 void listVariables(Expression* exp) {
-    Set<string> variables;
+    Set<std::string> variables;
     yieldVariables(exp, variables);
 
-    for (string variable : variables) {
-        cout << variable << endl;
+    for (std::string variable : variables) {
+        std::cout << variable << std::endl;
     }
-}
-
-bool expMatch(Expression* exp1, Expression* exp2) {
-    ExpressionType exp1Type = exp1->getType();
-    ExpressionType exp2Type = exp2->getType();
-
-    if (exp1Type != exp2Type) return false;
-
-    if (exp1Type == CONSTANT) return exp1->getConstantValue() == exp2->getConstantValue();
-
-    if (exp1Type == IDENTIFIER) return exp1->getIdentifierName() == exp2->getIdentifierName();
-
-    if (exp1Type == BINARY) {
-        return exp1->getOperator() == exp2->getOperator()
-               && expMatch(exp1->getLhs(), exp2->getLhs())
-               && expMatch(exp1->getRhs(), exp2->getRhs());
-    }
-
-    if (exp1Type == UNARY) {
-        return exp1->getOperator() == exp2->getOperator()
-               && expMatch(exp1->getRhs(), exp1->getRhs());
-    }
-
-    return false;
-}
-
-Expression* foldConstantsInCompoundExp(const Expression* exp) {
-    Expression* lhs = foldConstants(exp->getLhs());
-    Expression* rhs = foldConstants(exp->getRhs());
-
-    if (lhs->getType() == CONSTANT && rhs->getType() == CONSTANT) {
-        EvaluationContext context;
-        return Expression::constant(exp->eval(context));
-    }
-
-    if (exp->getType() == BINARY) {
-        return Expression::binary(exp->getOperator(), lhs, rhs);
-    } else {
-        return Expression::unary(exp->getOperator(), rhs);
-    }
-}
-
-Expression* foldConstants(const Expression* exp) {
-    if (exp->getType() == CONSTANT) {
-        return Expression::constant(exp->getConstantValue());
-    } else if (exp->getType() == IDENTIFIER) {
-        return Expression::identifier(exp->getIdentifierName());
-    }
-
-    return foldConstantsInCompoundExp(exp);
 }
 
 void testMainFlow() {
@@ -202,21 +134,44 @@ void testFoldConstants(string origexp) {
     delete e2;
 }
 
+void testUnparse() {
+    cout << "--- Unparse test ---" << endl;
+    testUnparse("y = 3 * (x + 1)");
+    testUnparse("y = 3 + (x + 1)");
+    testUnparse("y = 3 * (x * (y + 1))");
+    testUnparse("y = 3 * (x * y + 1)");
+}
+
+void testUnparse(string expr) {
+    Expression* e = createFromString(expr);
+
+    cout << "original: " << expr << endl;
+    cout << "toString: " << e->toString() << endl;
+    cout << "unparsed: " << unparse(e) << endl;
+
+    delete e;
+}
+
+void testDifferentiate() {
+    cout << endl << "--- Differentiate test ---" << endl;
+
+    testDifferentiate("2 * x + 3 * y");
+    testDifferentiate("3 * x * x");
+    // testDifferentiate("3 * x * x + 3 * y / x - c");
+    /*testDifferentiate("y");
+    testDifferentiate("2 * x + 3 * y");*/
+}
+
+void testDifferentiate(string expr) {
+    Expression* e = createFromString(expr);
+    cout << '(' << unparse(e) << ")' = " << unparse(differentiate(e, "x")) << endl;
+    delete e;
+}
+
 Expression* createFromString(string exp) {
     TokenScanner scanner;
     scanner.ignoreWhitespace();
     scanner.scanNumbers();
     scanner.setInput(exp);
     return parseExp(scanner);
-}
-
-void yieldVariables(Expression* exp, Set<string>& variables) {
-    if (exp->getType() == IDENTIFIER) {
-        variables.add(exp->getIdentifierName());
-    } else if (exp->getType() == BINARY) {
-        yieldVariables(exp->getLhs(), variables);
-        yieldVariables(exp->getRhs(), variables);
-    } else if (exp->getType() == UNARY) {
-        yieldVariables(exp->getRhs(), variables);
-    }
 }
