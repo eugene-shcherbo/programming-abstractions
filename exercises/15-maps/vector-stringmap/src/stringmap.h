@@ -11,6 +11,10 @@ public:
 
     std::string get(const std::string& key) const;
     void put(const std::string& key, const std::string& value);
+    int size() const;
+    bool isEmpty() const;
+    bool containsKey(const std::string& key) const;
+    void clear();
 
 private:
 

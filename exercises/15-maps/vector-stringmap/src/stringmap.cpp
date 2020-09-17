@@ -36,6 +36,23 @@ void StringMap::put(const std::string& key, const std::string& value) {
     bindings[index].value = value;
 }
 
+int StringMap::size() const {
+    return _size;
+}
+
+bool StringMap::isEmpty() const {
+    return _size == 0;
+}
+
+void StringMap::clear() {
+    _size = 0;
+}
+
+bool StringMap::containsKey(const std::string& key) const {
+    int index = findKey(key);
+    return index < _size && bindings[index].key == key;
+}
+
 int StringMap::findKey(const std::string& key) const {
     return findKeyBinarySearch(key, 0, _size - 1);
 }
