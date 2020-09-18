@@ -20,14 +20,19 @@ private:
     };
 
     static constexpr int INITIAL_BUCKET_COUNT = 13;
+    static constexpr double REHASH_THRESHOLD = .7;
 
     Cell **buckets;
     int nBuckets;
+    int nEntries;
 
     Cell* findCell(int bucket, const std::string& key) const;
 
     StringMap(const StringMap& src);
     StringMap& operator=(const StringMap& src) { return *this; }
+
+    bool isLoaded() const;
+    void extendBuckets();
 };
 
 #endif // STRINGMAP_H
