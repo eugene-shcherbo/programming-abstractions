@@ -108,8 +108,29 @@ public:
 
     void writeToStream(std::ostream &outfile) const;
 	void readFromStream(std::istream &infile);
+
+    void clear();
 	
 private:
-    /* For you to decide */
+    class Cell {
+    public:
+        Cell(Expression* exp);
+        ~Cell();
+
+        double getValue();
+        std::string stringValue();
+        std::string stringExpression();
+
+    private:
+        bool _hasValue;
+        Expression* _exp;
+        double _value;
+    };
+
+    int _numRows;
+    int _numCols;
+    SSView* _view;
+
+    Map<std::string, Cell*> _cells;
 };
 

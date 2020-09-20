@@ -51,7 +51,7 @@ typedef void (*cmdFnT)(TokenScanner& scanner, SSModel& model);
 
 static const int kLeftColumnWidth = 22;
 static void helpAction(TokenScanner& /* scanner */, SSModel& /* model */) {
-	cout << left << setw(kLeftColumnWidth) 
+    cout << left << setw(kLeftColumnWidth)
          << "help" << "Print this menu of commands" << endl;
 	cout << left << setw(kLeftColumnWidth) 
          << "load <filename>" << "Read named file into spreadsheet" << endl;
@@ -62,6 +62,8 @@ static void helpAction(TokenScanner& /* scanner */, SSModel& /* model */) {
          << "Set cell to value. Value can be \"string\" or formula" << endl;
 	cout << left << setw(kLeftColumnWidth) 
          << "get <cell>" << "Print contents of cell" << endl;
+    cout << left << setw(kLeftColumnWidth)
+         << "clear" << "Clear spreadsheet" << endl;
 	cout << left << setw(kLeftColumnWidth) 
          << "quit" << "Quit the program" << endl;
 	cout << endl;
@@ -114,6 +116,10 @@ static void getAction(TokenScanner& scanner, SSModel& model) {
 	model.printCellInformation(cellname);
 }
 
+static void clearAction(TokenScanner& /*scanner*/, SSModel& model) {
+    model.clear();
+}
+
 static const double kHaltTimeBeforeWindowClose = 3000;
 static void quitAction(TokenScanner& /* scanner */, SSModel& /* model */) {
     cout << "Thanks for using Stanford 1-2-3.  " 
@@ -136,6 +142,7 @@ static void setUpCommandTable(Map<string, cmdFnT>& table) {
     table["save"] = saveAction;
     table["set"] = setAction;
     table["get"] = getAction;
+    table["clear"] = clearAction;
     table["quit"] = quitAction;
 }
 
@@ -188,8 +195,8 @@ static void interpretCommands(Map<string, cmdFnT>& cmdTable) {
 
 int main() {
 	Map<string, cmdFnT> cmdTable;
-	setUpCommandTable(cmdTable);
-	interpretCommands(cmdTable);
+    setUpCommandTable(cmdTable);
+    interpretCommands(cmdTable);
 	return 0;
 }
 

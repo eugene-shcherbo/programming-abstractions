@@ -35,7 +35,7 @@ static const double kColWidth = 96;
 static const double kRowHeaderWidth = 22;
 static const double kColHeaderHeight = 15;
 static const double kHighlightPauseTime = 10;
-static const char kEllipsisChar = char(201); // is ascii 133 on PC? Check...!
+static const string kEllipsis = "..."; // is ascii 133 on PC? Check...!
 
 enum alignment { 
     LeftAligned, 
@@ -191,7 +191,7 @@ string SSView::shortenStringToFit(const string& s, double maxWidth) const {
 
     string clone = s;
 	while (true) {
-        label.setLabel(clone + kEllipsisChar);
+        label.setLabel(clone + kEllipsis);
         if (label.getWidth() <= maxWidth) break;
         clone.replace(clone.length() - 1, 1, "");
     }
