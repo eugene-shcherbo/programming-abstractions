@@ -37,20 +37,22 @@ bool SSModel::nameIsValid(const string& cellname) const {
 }
 
 void SSModel::setCellFromScanner(const string& cellname, TokenScanner& scanner) {
-    Expression* exp = parseExp(scanner);
+    Expression* exp = parseExp(scanner, *this);
 
     if (_cells.containsKey(cellname)) {
         delete _cells[cellname];
     }
 
-    Cell* cell = new Cell(exp);
+    Cell* cell = new Cell(this, exp);
     _cells[cellname] = cell;
     _view->displayCell(cellname, cell->stringValue());
 }
 
 void SSModel::printCellInformation(const string& cellname) const {
-    if (_cells.containsKey(cellname)) {
+    if (!_cells.containsKey(cellname)) {
         cout << "The cell is empty." << endl;
+    } else {
+        cout << "Cell Formula: " << cellname << " = " << _cells[cellname]->stringExpression() << endl;
     }
 }
 
@@ -89,9 +91,21 @@ void SSModel::clear() {
     _view->displayEmptySpreadsheet();
 }
 
-SSModel::Cell::Cell(Expression* exp) {
+double SSModel::getCellValue(const std::string& cellname) const {
+    if (!nameIsValid(cellname)) error("Invalid cell name");
+    Cell* cell = _cells[cellname];
+    return cell == nullptr ? .0 : cell->getValue();
+}
+
+Vector<double> SSModel::getRangeValues(range cellRange) const {
+    Vector<double> values;
+    return Vector<double>{2, 3, 4};
+}
+
+SSModel::Cell::Cell(const SSModel* parent, Expression* exp) {
     _exp = exp;
     _hasValue = false;
+    _parent = parent;
 }
 
 SSModel::Cell::~Cell() {
@@ -99,7 +113,7 @@ SSModel::Cell::~Cell() {
 }
 
 double SSModel::Cell::getValue() {
-    EvaluationContext context;
+    EvaluationContext context(_parent);
 
     if (_hasValue) {
         return _value;

@@ -13,6 +13,28 @@
 #include "strlib.h"
 using namespace std;
 
+typedef double (*RangeFn)(const Vector<double>&);
+
+static const Map<std::string, RangeFn> rangeFunctionsTable {
+    { "average", average },
+    { "mean", average },
+    { "sum", sum },
+    { "product", product },
+    { "max", max },
+    { "min", min },
+    { "median", median },
+    { "stdev", stdev }
+};
+
+double evalRangeFunction(const std::string& funcName, const Vector<double>& values) {
+    if (!supportRangeFunction(funcName)) error("Function " + funcName + " is not supported");
+    return rangeFunctionsTable[toLowerCase(funcName)](values);
+}
+
+bool supportRangeFunction(const std::string& funcName) {
+    return rangeFunctionsTable.containsKey(toLowerCase(funcName));
+}
+
 bool stringToLocation(const string& name, location& loc) {
 	stringstream sstr;
 	sstr << name;	// insert name into stream, then parse it back out

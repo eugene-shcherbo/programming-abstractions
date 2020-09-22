@@ -91,7 +91,7 @@ IdentifierExp::IdentifierExp(const string& name) {
 }
 
 double IdentifierExp::eval(EvaluationContext& context) const {
-   if (!context.isDefined(name)) error(name + " is undefined");
+   if (!context.isDefined(name)) error("Invalid cell name " + name);
    return context.getValue(name);
 }
 
@@ -135,7 +135,6 @@ double CompoundExp::eval(EvaluationContext & context) const {
    if (op == "/") return left / right; // divide by 0.0 gives ±INF
     
    error("Illegal operator in expression.");
-   return 0.0;
 }
 
 string CompoundExp::toString() const {
@@ -159,20 +158,46 @@ const Expression *CompoundExp::getRHS() const {
 }
 
 /**
- * Implementation notes: EvaluationContext
- * ---------------------------------------
- * The methods in the EvaluationContext class simply call the appropriate
- * method on the map used to represent the symbol table.
+ * Implementation notes: FunctionExp
+ * ---------------------------------
+ * The implementation of eval for FunctionExp asks the model to
+ * evaluate the function for a range defined as leftCorner and rightCorner.
  */
 
-void EvaluationContext::setValue(const string& var, double value) {
-   symbolTable.put(var, value);
+FunctionExpression::FunctionExpression(const string& funcName, range cellRange) {
+    _funcName = funcName;
+    _range = cellRange;
+}
+
+double FunctionExpression::eval(EvaluationContext & context) const {
+    return context.executeRangeFunction(_funcName, _range);
+}
+
+string FunctionExpression::toString() const {
+    return _funcName + '(' + _range.startCell + ":" + _range.stopCell + ')';
+}
+
+ExpressionType FunctionExpression::getType() const {
+    return FUNCTION;
+}
+
+/**
+ * Implementation notes: EvaluationContext
+*/
+
+EvaluationContext::EvaluationContext(const SSModel* spreadsheetModel) {
+    _spreadsheetModel = spreadsheetModel;
 }
 
 double EvaluationContext::getValue(const string& var) const {
-   return symbolTable.get(var);
+    return _spreadsheetModel->getCellValue(var);
 }
 
 bool EvaluationContext::isDefined(const string& var) const {
-   return symbolTable.containsKey(var);
+    return _spreadsheetModel->nameIsValid(var);
+}
+
+double EvaluationContext::executeRangeFunction(const std::string& funcName, range cellRange) const {
+    Vector<double> values = _spreadsheetModel->getRangeValues(cellRange);
+    return evalRangeFunction(funcName, values);
 }

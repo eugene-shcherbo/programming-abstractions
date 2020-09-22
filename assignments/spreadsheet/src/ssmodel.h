@@ -18,6 +18,7 @@
  */
 
 class Expression;
+struct range;
 
 /**
  * Class: SSModel
@@ -107,14 +108,44 @@ public:
  */
 
     void writeToStream(std::ostream &outfile) const;
-	void readFromStream(std::istream &infile);
+    void readFromStream(std::istream &infile);
+
+/**
+ * Member function: clear
+ * Usage: model.clear();
+ * --------------------------------
+ * This member function empties all the cells of the spreadsheet.
+ */
 
     void clear();
-	
+
+    /**
+     * Member function: getCellValue
+     * Usage: double value = model.getCellValue(cellname);
+     * ---------------------------------------------------
+     * This member function returns a value which occupy
+     * the named cell. If the cell is empty, the function returns
+     * 0.0.
+     *
+     * error is called if the cell doesn't exist.
+     */
+
+    double getCellValue(const std::string& cellname) const;
+
+    /**
+     * Member function: getRangeValues
+     * Usage: Vector<double> values = model.getRangeValues(range);
+     * ---------------------------------------------------
+     * This member function returns a vector with values of each cell
+     * in the range.
+     */
+
+    Vector<double> getRangeValues(range cellRange) const;
+
 private:
     class Cell {
     public:
-        Cell(Expression* exp);
+        Cell(const SSModel* parent, Expression* exp);
         ~Cell();
 
         double getValue();
@@ -125,12 +156,12 @@ private:
         bool _hasValue;
         Expression* _exp;
         double _value;
+        const SSModel* _parent;
     };
 
     int _numRows;
     int _numCols;
     SSView* _view;
-
     Map<std::string, Cell*> _cells;
 };
 

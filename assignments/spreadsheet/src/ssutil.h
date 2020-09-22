@@ -7,6 +7,11 @@
  
 #pragma once
 #include "vector.h"
+#include "map.h"
+
+double evalRangeFunction(const std::string& funcName, const Vector<double>& values);
+
+bool supportRangeFunction(const std::string& funcName);
 
 /**
  * Type: location
@@ -30,8 +35,9 @@ struct location {
  */
 
 struct range {
-	location startCell, stopCell;
-} ;
+    std::string startCell;
+    std::string stopCell;
+};
 		
 /**
  * Function: stringToLocation

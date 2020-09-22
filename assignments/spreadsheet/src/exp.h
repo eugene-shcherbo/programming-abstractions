@@ -10,9 +10,10 @@
 #include <string>
 #include "map.h"
 #include "tokenscanner.h"
+#include "ssmodel.h"
+#include "ssutil.h"
 
 /* Forward reference */
-
 class EvaluationContext;
 
 /*
@@ -22,7 +23,7 @@ class EvaluationContext;
  * expression types: DOUBLE, TEXTSTRING, IDENTIFIER, and COMPOUND.
  */
 
-enum ExpressionType { DOUBLE, TEXTSTRING, IDENTIFIER, COMPOUND };
+enum ExpressionType { DOUBLE, TEXTSTRING, IDENTIFIER, COMPOUND, FUNCTION };
 
 /**
  * Class: Expression
@@ -229,6 +230,43 @@ private:
    const Expression *lhs, *rhs; /* The left and right subexpression  */
 };
 
+
+/**
+ * Subclass: FunctionExpression
+ * ----------------------------
+ * This subclass represents a function which should be applied
+ * to a range of cells.
+ */
+
+class FunctionExpression : public Expression {
+
+public:
+    /**
+     * Constructor: FunctionExpression
+     * Usage: auto exp = new FunctionExpression(funcName, lc, rc);
+     * -----------------------------------------------------------
+     * The constructor initializes a new function expression with the
+     * specified functio name, and two cellnames which represent left
+     * and right corners of the range to which the function should be applied.
+     */
+
+    FunctionExpression(const std::string& funcName, range cellRange);
+
+    /* Prototypes for the virtual methods overridden by this class */
+
+    double eval(EvaluationContext& context) const override;
+    std::string toString() const override;
+    ExpressionType getType() const override;
+
+    /* Prototypes of methods specific to this class */
+
+    std::string getFuncName() const;
+
+private:
+    std::string _funcName;
+    range _range;
+};
+
 /**
  * Class: EvaluationContext
  * ------------------------
@@ -240,14 +278,7 @@ class EvaluationContext {
 
 public:
 
-/**
- * Method: setValue
- * Usage: context.setValue(var, value);
- * ------------------------------------
- * Sets the value associated with the specified var.
- */
-
-   void setValue(const std::string& var, double value);
+    EvaluationContext(const SSModel* spreadsheetModel);
 
 /**
  * Method: getValue
@@ -267,8 +298,10 @@ public:
 
    bool isDefined(const std::string& var) const;
 
+   double executeRangeFunction(const std::string& funcName, range cellRange) const;
+
 private:
-   Map<std::string, double> symbolTable;
+    const SSModel* _spreadsheetModel;
 };
 
 #endif
