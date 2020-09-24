@@ -15,6 +15,16 @@ int colNum(char letter) {
     return (letter - 'A') + 1;
 }
 
+void yieldCellsFromExpression(const Expression* exp, Set<std::string>& cells) {
+    if (exp->getType() == IDENTIFIER) {
+        cells.add(((const IdentifierExp*)exp)->getIdentifierName());
+    } else if (exp->getType() == COMPOUND) {
+        auto compound = (const CompoundExp*)exp;
+        yieldCellsFromExpression(compound->getLHS(), cells);
+        yieldCellsFromExpression(compound->getRHS(), cells);
+    }
+}
+
 SSModel::SSModel(int nRows, int nCols, SSView* view) {
     _numRows = nRows;
     _numCols = nCols;
@@ -38,6 +48,8 @@ bool SSModel::nameIsValid(const string& cellname) const {
 
 void SSModel::setCellFromScanner(const string& cellname, TokenScanner& scanner) {
     Expression* exp = parseExp(scanner, *this);
+    Set<std::string> cells;
+    yieldCellsFromExpression(exp, cells);
 
     if (_cells.containsKey(cellname)) {
         delete _cells[cellname];

@@ -9,6 +9,7 @@
 #include <string>
 #include "tokenscanner.h"
 #include "ssview.h"
+#include "graphtypes.h"
 
 /**
  * This is a "forward reference" which informs the compiler there is a
@@ -163,5 +164,6 @@ private:
     int _numCols;
     SSView* _view;
     Map<std::string, Cell*> _cells;
+    Map<std::string, graph*> _affectedOn;
 };
 
