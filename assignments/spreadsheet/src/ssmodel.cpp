@@ -49,6 +49,33 @@ bool detectCyclicReference(graph* dependencies, const std::string& fromCell, con
     else return detectCycle(fromNode, toCells);
 }
 
+void addNode(graph* dependencies, const string& cellname) {
+    node* newNode = new node;
+    newNode->name = cellname;
+    dependencies->nodes.add(newNode);
+    dependencies->index[cellname] = newNode;
+}
+
+node* getOrCreateNode(graph* dependencies, const string& cellname) {
+    node* node = dependencies->index[cellname];
+
+    if (node == nullptr)
+        addNode(dependencies, cellname);
+
+    return node;
+}
+
+void addDependency(graph* dependencies, node* impact, node* dependent) {
+    arc* dependency = new arc;
+    dependency->start = impact;
+    dependency->finish = dependent;
+
+    impact->outgoing.add(dependency);
+    dependent->incoming.add(dependency);
+
+    dependencies->arcs.add(dependency);
+}
+
 SSModel::SSModel(int nRows, int nCols, SSView* view) {
     _numRows = nRows;
     _numCols = nCols;
@@ -80,13 +107,7 @@ void SSModel::setCellFromScanner(const string& cellname, TokenScanner& scanner) 
         error("Cyclic reference");
     }
 
-    node* dependent = _dependencies->index[cellname];
-    if (dependent == nullptr) {
-        dependent = new node;
-        dependent->name = cellname;
-        _dependencies->nodes.add(dependent);
-        _dependencies->index[cellname] = dependent;
-    }
+    node* dependent = getOrCreateNode(_dependencies, cellname);
 
     for (arc* inc : dependent->incoming) {
         inc->start->outgoing.remove(inc);
@@ -96,25 +117,11 @@ void SSModel::setCellFromScanner(const string& cellname, TokenScanner& scanner) 
     dependent->incoming.clear();
 
     for (const std::string& cell : cells) {
-        arc* dependency = new arc;
-        node* impact = _dependencies->index[cell];
-
-        if (impact == nullptr) {
-            impact = new node;
-            impact->name = cell;
-            _dependencies->nodes.add(impact);
-            _dependencies->index[cell] = impact;
-        }
-
-        dependency->start = impact;
-        dependency->finish = dependent;
-
-        impact->outgoing.add(dependency);
-        dependent->incoming.add(dependency);
-
-        _dependencies->arcs.add(dependency);
+        node* impact = getOrCreateNode(_dependencies, cell);
+        addDependency(_dependencies, impact, dependent);
     }
 
+    // This is double work, because I already done this with graph of dependencies (the name is also not best)
     if (_cells.containsKey(cellname)) {
         delete _cells[cellname];
     }

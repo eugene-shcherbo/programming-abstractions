@@ -144,6 +144,12 @@ public:
     Vector<double> getRangeValues(range cellRange) const;
 
 private:
+
+    // TODO: represent all spreadsheet using graph rather than map
+    // the same time complexity to get a cell (or node in graph theory)
+    // + the problem is that I need the graph in either implementation, so
+    // that let's just have one source of truth.
+
     class Cell {
     public:
         Cell(const SSModel* parent, Expression* exp);

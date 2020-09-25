@@ -56,3 +56,16 @@ struct graph {
    Set<arc *> arcs;
    Map<std::string, node *> index;
 };
+
+/*class Graph {
+
+public:
+    void addArc()
+
+private:
+    Set<node*> _nodes;
+    Set<arc*> _arcs;
+    Map<std::string, node*> _index;
+
+
+};*/
