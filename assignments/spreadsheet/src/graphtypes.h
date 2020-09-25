@@ -16,14 +16,20 @@
  * Type: node
  * ----------
  * This type represents an individual node and consists of the
- * name of the node and the set of arcs from this node.  We
- * exclude x and y coordinates from this version, since your
- * graphs won't be visualized on screen as traditional graphs.
+ * name of the node and the set of arcs from this node. Outgoing arcs
+ * are those ones which are dependent on the node. Incoming arcs are
+ * those ones which impact on the node. In fact, they are represented by
+ * the pointers to the same arcs.
+ *
+ * For example, consider node A3 and A1, where A1 = A3. We would have
+ * one edge, from A3 to A1, which is in outgoing for A3 and in incoming
+ * for A1.
  */
 
 struct node {
    std::string name;
-   Set<struct arc *> arcs;
+   Set<struct arc *> outgoing;
+   Set<struct arc *> incoming;
 };
 
 /**

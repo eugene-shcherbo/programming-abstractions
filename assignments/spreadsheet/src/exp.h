@@ -261,6 +261,7 @@ public:
     /* Prototypes of methods specific to this class */
 
     std::string getFuncName() const;
+    range getRange() const { return _range; }
 
 private:
     std::string _funcName;

@@ -15,9 +15,16 @@ int colNum(char letter) {
     return (letter - 'A') + 1;
 }
 
+Set<std::string> getCellsInRange(range cellRange) {
+    return Set<std::string> { "A1", "B1", "C1" };
+}
+
 void yieldCellsFromExpression(const Expression* exp, Set<std::string>& cells) {
     if (exp->getType() == IDENTIFIER) {
         cells.add(((const IdentifierExp*)exp)->getIdentifierName());
+    } else if (exp->getType() == FUNCTION) {
+        auto function = (const FunctionExpression*)exp;
+        cells.addAll(getCellsInRange(function->getRange()));
     } else if (exp->getType() == COMPOUND) {
         auto compound = (const CompoundExp*)exp;
         yieldCellsFromExpression(compound->getLHS(), cells);
@@ -25,10 +32,28 @@ void yieldCellsFromExpression(const Expression* exp, Set<std::string>& cells) {
     }
 }
 
+bool detectCycle(node* from, const Set<std::string>& toCells) {
+    if (from == nullptr) return false;
+    else if (toCells.contains(from->name)) return true;
+
+    for (arc* arc : from->outgoing) {
+        if (detectCycle(arc->finish, toCells)) return true;
+    }
+
+    return false;
+}
+
+bool detectCyclicReference(graph* dependencies, const std::string& fromCell, const Set<std::string>& toCells) {
+    node* fromNode = dependencies->index[fromCell];
+    if (fromNode == nullptr) return toCells.contains(fromCell);
+    else return detectCycle(fromNode, toCells);
+}
+
 SSModel::SSModel(int nRows, int nCols, SSView* view) {
     _numRows = nRows;
     _numCols = nCols;
     _view = view;
+    _dependencies = new graph();
 }
 
 SSModel::~SSModel() {}
@@ -50,6 +75,45 @@ void SSModel::setCellFromScanner(const string& cellname, TokenScanner& scanner) 
     Expression* exp = parseExp(scanner, *this);
     Set<std::string> cells;
     yieldCellsFromExpression(exp, cells);
+
+    if (detectCyclicReference(_dependencies, cellname, cells)) {
+        error("Cyclic reference");
+    }
+
+    node* dependent = _dependencies->index[cellname];
+    if (dependent == nullptr) {
+        dependent = new node;
+        dependent->name = cellname;
+        _dependencies->nodes.add(dependent);
+        _dependencies->index[cellname] = dependent;
+    }
+
+    for (arc* inc : dependent->incoming) {
+        inc->start->outgoing.remove(inc);
+        delete inc;
+    }
+
+    dependent->incoming.clear();
+
+    for (const std::string& cell : cells) {
+        arc* dependency = new arc;
+        node* impact = _dependencies->index[cell];
+
+        if (impact == nullptr) {
+            impact = new node;
+            impact->name = cell;
+            _dependencies->nodes.add(impact);
+            _dependencies->index[cell] = impact;
+        }
+
+        dependency->start = impact;
+        dependency->finish = dependent;
+
+        impact->outgoing.add(dependency);
+        dependent->incoming.add(dependency);
+
+        _dependencies->arcs.add(dependency);
+    }
 
     if (_cells.containsKey(cellname)) {
         delete _cells[cellname];

@@ -164,6 +164,7 @@ private:
     int _numCols;
     SSView* _view;
     Map<std::string, Cell*> _cells;
-    Map<std::string, graph*> _affectedOn;
+
+    graph* _dependencies;
 };
 
