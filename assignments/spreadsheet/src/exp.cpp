@@ -170,7 +170,7 @@ FunctionExpression::FunctionExpression(const string& funcName, range cellRange) 
 }
 
 double FunctionExpression::eval(EvaluationContext & context) const {
-    return context.executeRangeFunction(_funcName, _range);
+    error("NOT IMPLEMENTED");
 }
 
 string FunctionExpression::toString() const {
@@ -179,25 +179,4 @@ string FunctionExpression::toString() const {
 
 ExpressionType FunctionExpression::getType() const {
     return FUNCTION;
-}
-
-/**
- * Implementation notes: EvaluationContext
-*/
-
-EvaluationContext::EvaluationContext(const SSModel* spreadsheetModel) {
-    _spreadsheetModel = spreadsheetModel;
-}
-
-double EvaluationContext::getValue(const string& var) const {
-    return _spreadsheetModel->getCellValue(var);
-}
-
-bool EvaluationContext::isDefined(const string& var) const {
-    return _spreadsheetModel->nameIsValid(var);
-}
-
-double EvaluationContext::executeRangeFunction(const std::string& funcName, range cellRange) const {
-    Vector<double> values = _spreadsheetModel->getRangeValues(cellRange);
-    return evalRangeFunction(funcName, values);
 }

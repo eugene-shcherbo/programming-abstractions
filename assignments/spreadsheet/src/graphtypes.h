@@ -11,6 +11,7 @@
 #include "gtypes.h"
 #include "map.h"
 #include "set.h"
+#include "exp.h"
 
 /**
  * Type: node
@@ -28,6 +29,7 @@
 
 struct node {
    std::string name;
+   Expression* exp;
    Set<struct arc *> outgoing;
    Set<struct arc *> incoming;
 };
@@ -56,16 +58,3 @@ struct graph {
    Set<arc *> arcs;
    Map<std::string, node *> index;
 };
-
-/*class Graph {
-
-public:
-    void addArc()
-
-private:
-    Set<node*> _nodes;
-    Set<arc*> _arcs;
-    Map<std::string, node*> _index;
-
-
-};*/

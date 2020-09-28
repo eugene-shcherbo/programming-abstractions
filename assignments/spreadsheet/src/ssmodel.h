@@ -18,6 +18,8 @@
  * exists.
  */
 
+
+class SpreadsheetEvaluationContext;
 class Expression;
 struct range;
 
@@ -145,32 +147,34 @@ public:
 
 private:
 
-    // TODO: represent all spreadsheet using graph rather than map
-    // the same time complexity to get a cell (or node in graph theory)
-    // + the problem is that I need the graph in either implementation, so
-    // that let's just have one source of truth.
-
-    class Cell {
-    public:
-        Cell(const SSModel* parent, Expression* exp);
-        ~Cell();
-
-        double getValue();
-        std::string stringValue();
-        std::string stringExpression();
-
-    private:
-        bool _hasValue;
-        Expression* _exp;
-        double _value;
-        const SSModel* _parent;
-    };
-
     int _numRows;
     int _numCols;
     SSView* _view;
-    Map<std::string, Cell*> _cells;
+    graph* _cells;
+    SpreadsheetEvaluationContext* _evalContext;
 
-    graph* _dependencies;
+    node* getCell(const std::string& cellName);
+    void cleanCell(node* cell);
+    void setCell(node* cell, Expression* exp);
+    void displayCell(node* cell);
+
+    bool formsCycle(node* dependent, const Set<std::string>& refs);
 };
 
+
+class SpreadsheetEvaluationContext : public EvaluationContext {
+
+public:
+    SpreadsheetEvaluationContext(const SSModel* spreadSheetModel) {
+        _spreadsheet = spreadSheetModel;
+    }
+
+    ~SpreadsheetEvaluationContext() override;
+
+    double getValue(const std::string &var) const override;
+
+    bool isDefined(const std::string &var) const override;
+
+private:
+    const SSModel* _spreadsheet;
+};

@@ -10,7 +10,6 @@
 #include <string>
 #include "map.h"
 #include "tokenscanner.h"
-#include "ssmodel.h"
 #include "ssutil.h"
 
 /* Forward reference */
@@ -279,7 +278,7 @@ class EvaluationContext {
 
 public:
 
-    EvaluationContext(const SSModel* spreadsheetModel);
+    virtual ~EvaluationContext() = 0;
 
 /**
  * Method: getValue
@@ -288,7 +287,7 @@ public:
  * Returns the value associated with the specified variable.
  */
 
-   double getValue(const std::string& var) const;
+    virtual double getValue(const std::string& var) const = 0;
 
 /**
  * Method: isDefined
@@ -297,12 +296,7 @@ public:
  * Returns true if the specified variable is defined.
  */
 
-   bool isDefined(const std::string& var) const;
-
-   double executeRangeFunction(const std::string& funcName, range cellRange) const;
-
-private:
-    const SSModel* _spreadsheetModel;
+    virtual bool isDefined(const std::string& var) const = 0;
 };
 
 #endif

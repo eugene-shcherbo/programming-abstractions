@@ -15,75 +15,44 @@ int colNum(char letter) {
     return (letter - 'A') + 1;
 }
 
-Set<std::string> getCellsInRange(range cellRange) {
-    return Set<std::string> { "A1", "B1", "C1" };
-}
-
-void yieldCellsFromExpression(const Expression* exp, Set<std::string>& cells) {
+void yieldRefsFromExpression(const Expression* exp, Set<std::string>& refs) {
     if (exp->getType() == IDENTIFIER) {
-        cells.add(((const IdentifierExp*)exp)->getIdentifierName());
-    } else if (exp->getType() == FUNCTION) {
-        auto function = (const FunctionExpression*)exp;
-        cells.addAll(getCellsInRange(function->getRange()));
+        refs.add(((const IdentifierExp*)exp)->getIdentifierName());
     } else if (exp->getType() == COMPOUND) {
         auto compound = (const CompoundExp*)exp;
-        yieldCellsFromExpression(compound->getLHS(), cells);
-        yieldCellsFromExpression(compound->getRHS(), cells);
+        yieldRefsFromExpression(compound->getLHS(), refs);
+        yieldRefsFromExpression(compound->getRHS(), refs);
     }
 }
 
-bool detectCycle(node* from, const Set<std::string>& toCells) {
-    if (from == nullptr) return false;
-    else if (toCells.contains(from->name)) return true;
+bool SSModel::formsCycle(node* dependent, const Set<std::string>& refs) {
+    if (dependent == nullptr) {
+        return false;
+    } else if (refs.contains(dependent->name)) {
+        return true;
+    }
 
-    for (arc* arc : from->outgoing) {
-        if (detectCycle(arc->finish, toCells)) return true;
+    for (arc* dependency : dependent->outgoing) {
+        if (formsCycle(dependency->finish, refs)) {
+            return true;
+        }
     }
 
     return false;
-}
-
-bool detectCyclicReference(graph* dependencies, const std::string& fromCell, const Set<std::string>& toCells) {
-    node* fromNode = dependencies->index[fromCell];
-    if (fromNode == nullptr) return toCells.contains(fromCell);
-    else return detectCycle(fromNode, toCells);
-}
-
-void addNode(graph* dependencies, const string& cellname) {
-    node* newNode = new node;
-    newNode->name = cellname;
-    dependencies->nodes.add(newNode);
-    dependencies->index[cellname] = newNode;
-}
-
-node* getOrCreateNode(graph* dependencies, const string& cellname) {
-    node* node = dependencies->index[cellname];
-
-    if (node == nullptr)
-        addNode(dependencies, cellname);
-
-    return node;
-}
-
-void addDependency(graph* dependencies, node* impact, node* dependent) {
-    arc* dependency = new arc;
-    dependency->start = impact;
-    dependency->finish = dependent;
-
-    impact->outgoing.add(dependency);
-    dependent->incoming.add(dependency);
-
-    dependencies->arcs.add(dependency);
 }
 
 SSModel::SSModel(int nRows, int nCols, SSView* view) {
     _numRows = nRows;
     _numCols = nCols;
     _view = view;
-    _dependencies = new graph();
+    _cells = new graph();
+    _evalContext = new SpreadsheetEvaluationContext(this);
 }
 
-SSModel::~SSModel() {}
+SSModel::~SSModel() {
+    delete _cells;
+    delete _evalContext;
+}
 
 bool SSModel::nameIsValid(const string& cellname) const {
     location loc;
@@ -100,49 +69,71 @@ bool SSModel::nameIsValid(const string& cellname) const {
 
 void SSModel::setCellFromScanner(const string& cellname, TokenScanner& scanner) {
     Expression* exp = parseExp(scanner, *this);
-    Set<std::string> cells;
-    yieldCellsFromExpression(exp, cells);
+    node* cell = getCell(cellname);
+    setCell(cell, exp);
+    displayCell(cell);
+}
 
-    if (detectCyclicReference(_dependencies, cellname, cells)) {
+void SSModel::setCell(node* cell, Expression* exp) {
+    Set<std::string> refs;
+    yieldRefsFromExpression(exp, refs);
+
+    if (formsCycle(cell, refs)) {
         error("Cyclic reference");
+    } else {
+        cleanCell(cell);
+        cell->exp = exp;
+        _cells->nodes.add(cell);
+        _cells->index[cell->name] = cell;
+    }
+}
+
+void SSModel::displayCell(node* cell) {
+    if (cell->exp->getType() == TEXTSTRING) {
+        auto exp = static_cast<TextStringExp*>(cell->exp);
+        _view->displayCell(cell->name, exp->toString());
+    } else {
+        double expValue = cell->exp->eval(*_evalContext);
+        _view->displayCell(cell->name, realToString(expValue));
+    }
+}
+
+node* SSModel::getCell(const std::string& cellname) {
+    node* cell = _cells->index[cellname];
+
+    if (cell == nullptr) {
+        cell = new node();
+        cell->name = cellname;
+        cell->exp = nullptr;
     }
 
-    node* dependent = getOrCreateNode(_dependencies, cellname);
+    return cell;
+}
 
-    for (arc* inc : dependent->incoming) {
-        inc->start->outgoing.remove(inc);
-        delete inc;
-    }
-
-    dependent->incoming.clear();
-
-    for (const std::string& cell : cells) {
-        node* impact = getOrCreateNode(_dependencies, cell);
-        addDependency(_dependencies, impact, dependent);
-    }
-
-    // This is double work, because I already done this with graph of dependencies (the name is also not best)
-    if (_cells.containsKey(cellname)) {
-        delete _cells[cellname];
-    }
-
-    Cell* cell = new Cell(this, exp);
-    _cells[cellname] = cell;
-    _view->displayCell(cellname, cell->stringValue());
+void SSModel::cleanCell(node* cell) {
+    if (cell->exp != nullptr)
+        delete cell->exp;
 }
 
 void SSModel::printCellInformation(const string& cellname) const {
-    if (!_cells.containsKey(cellname)) {
+    if (!_cells->index.containsKey(cellname)) {
         cout << "The cell is empty." << endl;
     } else {
-        cout << "Cell Formula: " << cellname << " = " << _cells[cellname]->stringExpression() << endl;
+        cout << "Cell Formula: " << cellname << " = "
+             << _cells->index[cellname]->exp->toString() << endl;
     }
 }
 
 void SSModel::writeToStream(ostream& outfile) const {
-    for (std::string cellname: _cells) {
-        Cell* cell = _cells[cellname];
-        outfile << cellname << " = " << cell->stringExpression() << endl;
+    for (node* cell: _cells->nodes) {
+        outfile << cell->name << " = ";
+
+        if (cell->exp->getType() == TEXTSTRING) {
+            auto text = static_cast<TextStringExp*>(cell->exp);
+            outfile << text->getTextStringValue() << std::endl;
+        } else {
+            outfile << cell->exp->toString() << std::endl;
+        }
     }
 }
 
@@ -167,59 +158,27 @@ void SSModel::readFromStream(istream& infile) {
 }
 
 void SSModel::clear() {
-    for (std::string cellname: _cells) {
-        delete _cells[cellname];
+    for (node* cell : _cells->nodes) {
+        cleanCell(cell);
+        delete cell;
     }
-    _cells.clear();
+
+    for (arc* dependency : _cells->arcs)
+        delete dependency;
+
+    _cells->nodes.clear();
+    _cells->arcs.clear();
+    _cells->index.clear();
     _view->displayEmptySpreadsheet();
 }
 
-double SSModel::getCellValue(const std::string& cellname) const {
-    if (!nameIsValid(cellname)) error("Invalid cell name");
-    Cell* cell = _cells[cellname];
-    return cell == nullptr ? .0 : cell->getValue();
+SpreadsheetEvaluationContext::~SpreadsheetEvaluationContext() {
 }
 
-Vector<double> SSModel::getRangeValues(range cellRange) const {
-    Vector<double> values;
-    return Vector<double>{2, 3, 4};
+double SpreadsheetEvaluationContext::getValue(const std::string& var) const {
+    return .0;
 }
 
-SSModel::Cell::Cell(const SSModel* parent, Expression* exp) {
-    _exp = exp;
-    _hasValue = false;
-    _parent = parent;
-}
-
-SSModel::Cell::~Cell() {
-    delete _exp;
-}
-
-double SSModel::Cell::getValue() {
-    EvaluationContext context(_parent);
-
-    if (_hasValue) {
-        return _value;
-    } else {
-        double res =  _exp->eval(context);
-        _hasValue = true;
-        _value = res;
-        return res;
-    }
-}
-
-std::string SSModel::Cell::stringValue() {
-    if (_exp->getType() == TEXTSTRING) {
-        return _exp->toString();
-    } else {
-        return realToString(getValue());
-    }
-}
-
-std::string SSModel::Cell::stringExpression() {
-    if (_exp->getType() == TEXTSTRING) {
-        return static_cast<TextStringExp*>(_exp)->getTextStringValue();
-    } else {
-        return _exp->toString();
-    }
+bool SpreadsheetEvaluationContext::isDefined(const std::string& var) const {
+    return false;
 }
