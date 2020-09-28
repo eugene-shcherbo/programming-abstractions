@@ -127,8 +127,8 @@ public:
      * Usage: double value = model.getCellValue(cellname);
      * ---------------------------------------------------
      * This member function returns a value which occupy
-     * the named cell. If the cell is empty, the function returns
-     * 0.0.
+     * the named cell. If the cell is a textstrign constant or empty,
+     * the function returns 0.0.
      *
      * error is called if the cell doesn't exist.
      */
@@ -150,15 +150,16 @@ private:
     int _numRows;
     int _numCols;
     SSView* _view;
-    graph* _cells;
+    graph* _spreadsheet;
     SpreadsheetEvaluationContext* _evalContext;
 
     node* getCell(const std::string& cellName);
     void cleanCell(node* cell);
     void setCell(node* cell, Expression* exp);
     void displayCell(node* cell);
-
     bool formsCycle(node* dependent, const Set<std::string>& refs);
+    void addDependencies(node* dependent, const Set<std::string>& refs);
+    void addDependency(node* dependent, node* ref);
 };
 
 

@@ -180,3 +180,5 @@ string FunctionExpression::toString() const {
 ExpressionType FunctionExpression::getType() const {
     return FUNCTION;
 }
+
+EvaluationContext::~EvaluationContext() {}

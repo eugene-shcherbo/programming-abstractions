@@ -278,7 +278,7 @@ class EvaluationContext {
 
 public:
 
-    virtual ~EvaluationContext() = 0;
+    virtual ~EvaluationContext();
 
 /**
  * Method: getValue

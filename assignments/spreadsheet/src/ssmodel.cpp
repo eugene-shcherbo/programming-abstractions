@@ -45,12 +45,12 @@ SSModel::SSModel(int nRows, int nCols, SSView* view) {
     _numRows = nRows;
     _numCols = nCols;
     _view = view;
-    _cells = new graph();
+    _spreadsheet = new graph();
     _evalContext = new SpreadsheetEvaluationContext(this);
 }
 
 SSModel::~SSModel() {
-    delete _cells;
+    delete _spreadsheet;
     delete _evalContext;
 }
 
@@ -83,8 +83,9 @@ void SSModel::setCell(node* cell, Expression* exp) {
     } else {
         cleanCell(cell);
         cell->exp = exp;
-        _cells->nodes.add(cell);
-        _cells->index[cell->name] = cell;
+        _spreadsheet->nodes.add(cell);
+        _spreadsheet->index[cell->name] = cell;
+        addDependencies(cell, refs);
     }
 }
 
@@ -99,7 +100,7 @@ void SSModel::displayCell(node* cell) {
 }
 
 node* SSModel::getCell(const std::string& cellname) {
-    node* cell = _cells->index[cellname];
+    node* cell = _spreadsheet->index[cellname];
 
     if (cell == nullptr) {
         cell = new node();
@@ -113,19 +114,44 @@ node* SSModel::getCell(const std::string& cellname) {
 void SSModel::cleanCell(node* cell) {
     if (cell->exp != nullptr)
         delete cell->exp;
+
+    for (arc* ref : cell->incoming) {
+        ref->start->outgoing.remove(ref);
+        delete ref;
+    }
+
+    cell->incoming.clear();
+}
+
+void SSModel::addDependencies(node* dependent, const Set<std::string>& refs) {
+    for (const std::string& ref : refs) {
+        node* refCell = getCell(ref);
+        _spreadsheet->nodes.add(refCell);
+        _spreadsheet->index[ref] = refCell;
+        addDependency(dependent, refCell);
+    }
+}
+
+void SSModel::addDependency(node* dependent, node* ref) {
+    arc* dependency = new arc();
+    dependency->start = ref;
+    dependency->finish = dependent;
+    ref->outgoing.add(dependency);
+    dependent->incoming.add(dependency);
+    _spreadsheet->arcs.add(dependency);
 }
 
 void SSModel::printCellInformation(const string& cellname) const {
-    if (!_cells->index.containsKey(cellname)) {
+    if (!_spreadsheet->index.containsKey(cellname)) {
         cout << "The cell is empty." << endl;
     } else {
         cout << "Cell Formula: " << cellname << " = "
-             << _cells->index[cellname]->exp->toString() << endl;
+             << _spreadsheet->index[cellname]->exp->toString() << endl;
     }
 }
 
 void SSModel::writeToStream(ostream& outfile) const {
-    for (node* cell: _cells->nodes) {
+    for (node* cell: _spreadsheet->nodes) {
         outfile << cell->name << " = ";
 
         if (cell->exp->getType() == TEXTSTRING) {
@@ -158,27 +184,42 @@ void SSModel::readFromStream(istream& infile) {
 }
 
 void SSModel::clear() {
-    for (node* cell : _cells->nodes) {
+    for (node* cell : _spreadsheet->nodes) {
         cleanCell(cell);
         delete cell;
     }
 
-    for (arc* dependency : _cells->arcs)
+    for (arc* dependency : _spreadsheet->arcs)
         delete dependency;
 
-    _cells->nodes.clear();
-    _cells->arcs.clear();
-    _cells->index.clear();
+    _spreadsheet->nodes.clear();
+    _spreadsheet->arcs.clear();
+    _spreadsheet->index.clear();
     _view->displayEmptySpreadsheet();
+}
+
+
+double SSModel::getCellValue(const std::string& cellname) const {
+    if (!_spreadsheet->index.containsKey(cellname)) {
+        return .0;
+    }
+
+    Expression* exp = _spreadsheet->index[cellname]->exp;
+
+    if (exp == nullptr) {
+        return .0;
+    }
+
+    return exp->eval(*_evalContext);
 }
 
 SpreadsheetEvaluationContext::~SpreadsheetEvaluationContext() {
 }
 
 double SpreadsheetEvaluationContext::getValue(const std::string& var) const {
-    return .0;
+    return _spreadsheet->getCellValue(var);
 }
 
 bool SpreadsheetEvaluationContext::isDefined(const std::string& var) const {
-    return false;
+    return _spreadsheet->nameIsValid(var);
 }
