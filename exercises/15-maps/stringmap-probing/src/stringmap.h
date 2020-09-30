@@ -19,6 +19,7 @@ private:
     };
 
     static constexpr int INITIAL_BUCKET_COUNT = 13;
+    static constexpr double REHASH_THRESHOLD = 0.7;
 
     KeyValuePair** _pairs;
     int _capacity;
@@ -27,8 +28,10 @@ private:
     StringMap(const StringMap& src);
     StringMap& operator=(const StringMap& src) { return *this; }
 
-    void putInFirstFreeCell(int startFrom, const std::string& key, const std::string& value);
     int findEntry(const std::string& key) const;
+
+    double loadFactor() const { return _entries / _capacity; }
+    void extendAndRehash();
 };
 
 #endif // STRINGMAP_H

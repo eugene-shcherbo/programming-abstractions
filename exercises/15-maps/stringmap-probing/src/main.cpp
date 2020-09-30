@@ -72,10 +72,8 @@ void testHashing(size_t n) {
 }
 
 int main() {
-    testHashing(13);
-    // testHashing(10000);
-    // testHashing(100000);
-    // testHashing(1000000);
+    testHashing(100);
+    testHashing(10000);
 
     StringMap map;
     map.put("hello", "world");
