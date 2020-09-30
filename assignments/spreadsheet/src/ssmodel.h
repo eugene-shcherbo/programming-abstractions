@@ -129,11 +129,11 @@ public:
      * This member function returns a value which occupy
      * the named cell. If the cell is a textstrign constant or empty,
      * the function returns 0.0.
-     *
-     * error is called if the cell doesn't exist.
      */
 
     double getCellValue(const std::string& cellname) const;
+
+    void getCellValues(const Set<std::string>& cellnames, Vector<double>& values) const;
 
     /**
      * Member function: getRangeValues
@@ -145,21 +145,24 @@ public:
 
     Vector<double> getRangeValues(range cellRange) const;
 
+    char lastColName() const { return 'A' + _numCols; }
+    int lastRowNum() const { return 1 + _numRows; }
+
 private:
 
     int _numRows;
     int _numCols;
     SSView* _view;
-    graph* _spreadsheet;
+    Graph* _spreadsheet;
     SpreadsheetEvaluationContext* _evalContext;
 
     node* getCell(const std::string& cellName);
-    void cleanCell(node* cell);
     void setCell(node* cell, Expression* exp);
     void displayCell(node* cell);
     bool formsCycle(node* dependent, const Set<std::string>& refs);
     void addDependencies(node* dependent, const Set<std::string>& refs);
-    void addDependency(node* dependent, node* ref);
+    bool isCellEmpty(const std::string& cellname) const;
+    void yieldRefsFromExpression(const Expression* exp, Set<std::string>& refs);
 };
 
 
@@ -171,9 +174,8 @@ public:
     }
 
     ~SpreadsheetEvaluationContext() override;
-
     double getValue(const std::string &var) const override;
-
+    void getValues(const Set<std::string>& variables, Vector<double>& values) const override;
     bool isDefined(const std::string &var) const override;
 
 private:

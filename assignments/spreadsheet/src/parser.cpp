@@ -19,7 +19,7 @@ static Expression *readE(TokenScanner& scanner, const SSModel& spreadsheetModel,
 static Expression *readT(TokenScanner& scanner, const SSModel& spreadsheetModel);
 static bool isFunction(const std::string& token);
 static Expression* parseFunction(const std::string& funcName, TokenScanner& scanner, const SSModel& spreadsheetModel);
-static range readRange(TokenScanner& scanner, const SSModel& spreadsheetModel);
+static Range readRange(TokenScanner& scanner, const SSModel& spreadsheetModel);
 static std::string readCellName(TokenScanner& scanner, const SSModel& spreadsheetModel);
 static int precedence(const std::string& token);
 
@@ -90,18 +90,18 @@ static bool isFunction(const std::string& token) {
 static Expression* parseFunction(const std::string& funcName, TokenScanner& scanner, const SSModel& spreadsheetModel) {
     string token = scanner.nextToken();
     if (token != "(") error("Expected parenthesis before cell name");
-    range cellRange = readRange(scanner, spreadsheetModel);
+    Range cellRange = readRange(scanner, spreadsheetModel);
     token = scanner.nextToken();
     if (token != ")") error("Expected parethesis after cell name");
-    return new FunctionExpression(funcName, cellRange);
+    return new FunctionExpression(funcName, getRangeFunction(funcName), cellRange);
 }
 
-static range readRange(TokenScanner& scanner, const SSModel& spreadsheetModel) {
+static Range readRange(TokenScanner& scanner, const SSModel& spreadsheetModel) {
     std::string leftCorner = readCellName(scanner, spreadsheetModel);
     std::string token = scanner.nextToken();
     if (token != ":") error("Expected ':' after " + leftCorner);
     std::string rightCorner = readCellName(scanner, spreadsheetModel);
-    return range { leftCorner, rightCorner };
+    return Range(leftCorner, rightCorner, spreadsheetModel.lastColName(), spreadsheetModel.lastRowNum());
 }
 
 static std::string readCellName(TokenScanner& scanner, const SSModel& spreadsheetModel) {

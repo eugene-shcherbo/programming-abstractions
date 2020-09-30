@@ -8,10 +8,13 @@
 #pragma once
 #include "vector.h"
 #include "map.h"
+#include "set.h"
+
+typedef double (*RangeFn)(const Vector<double>&);
 
 double evalRangeFunction(const std::string& funcName, const Vector<double>& values);
-
 bool supportRangeFunction(const std::string& funcName);
+RangeFn getRangeFunction(const std::string& funcName);
 
 /**
  * Type: location
@@ -34,9 +37,21 @@ struct location {
  * to change the definition to better fit your needs.
  */
 
-struct range {
-    std::string startCell;
-    std::string stopCell;
+class Range {
+
+public:
+    Range(const std::string& leftCorner, const std::string& rightCorner, char lastCol, int lastRow);
+
+    bool contains(const std::string& val) const;
+    void yieldAllValues(Set<std::string>& values) const;
+    std::string leftCorner() const;
+    std::string rightCorner() const;
+
+private:
+    location _leftCorner;
+    location _rightCorner;
+    char _lastCol;
+    int _lastRow;
 };
 		
 /**
@@ -77,4 +92,3 @@ double max(const Vector<double> & values);
 double min(const Vector<double> & values);
 double median(const Vector<double> & values);
 double stdev(const Vector<double> & values);
-

@@ -13,8 +13,6 @@
 #include "strlib.h"
 using namespace std;
 
-typedef double (*RangeFn)(const Vector<double>&);
-
 static const Map<std::string, RangeFn> rangeFunctionsTable {
     { "average", average },
     { "mean", average },
@@ -33,6 +31,10 @@ double evalRangeFunction(const std::string& funcName, const Vector<double>& valu
 
 bool supportRangeFunction(const std::string& funcName) {
     return rangeFunctionsTable.containsKey(toLowerCase(funcName));
+}
+
+RangeFn getRangeFunction(const std::string& funcName) {
+    return rangeFunctionsTable[toLowerCase(funcName)];
 }
 
 bool stringToLocation(const string& name, location& loc) {
@@ -103,5 +105,51 @@ double stdev(const Vector<double>& values) {
 		sumsquares += values[i] * values[i];
 	}
 	return sqrt((values.size() * sumsquares - sum*sum)/(values.size() * values.size()));
+}
+
+Range::Range(const std::string& leftCorner, const std::string& rightCorner, char lastCol, int lastRow) {
+    if (!stringToLocation(leftCorner, _leftCorner)) error("Invalid cell name format");
+    if (!stringToLocation(rightCorner, _rightCorner)) error("Invalid cell name format");
+
+    if (_leftCorner.row > _rightCorner.row)
+        error("Invalid cell range");
+    else if (_leftCorner.col > _rightCorner.col) {
+        error("Invalid cell range");
+    }
+
+    _lastCol = lastCol;
+    _lastRow = lastRow;
+}
+
+bool Range::contains(const std::string& val) const {
+    location value;
+
+    if (!stringToLocation(val, value)) {
+        return false;
+    } else if (value.col < _leftCorner.col && value.row <= _leftCorner.row) {
+        return false;
+    } else if (value.col > _rightCorner.col && value.row >= _rightCorner.row) {
+        return false;
+    } else return true;
+}
+
+void Range::yieldAllValues(Set<std::string>& values) const {
+    char firstCol = _leftCorner.col;
+
+    for (int row = _leftCorner.row; row <= _rightCorner.row && row <= _lastRow; row++) {
+        for (char col = firstCol; col <= _lastCol; col++) {
+            values.add(col + integerToString(row));
+            if (row == _rightCorner.row && col == _rightCorner.col) break;
+        }
+        firstCol = 'A';
+    }
+}
+
+std::string Range::leftCorner() const {
+    return locationToString(_leftCorner);
+}
+
+std::string Range::rightCorner() const {
+    return locationToString(_rightCorner);
 }
 

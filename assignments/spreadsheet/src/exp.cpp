@@ -164,17 +164,23 @@ const Expression *CompoundExp::getRHS() const {
  * evaluate the function for a range defined as leftCorner and rightCorner.
  */
 
-FunctionExpression::FunctionExpression(const string& funcName, range cellRange) {
+FunctionExpression::FunctionExpression(const string& funcName, RangeFn func, Range cellRange)
+    : _func(func), _range(cellRange)
+{
     _funcName = funcName;
-    _range = cellRange;
 }
 
 double FunctionExpression::eval(EvaluationContext & context) const {
-    error("NOT IMPLEMENTED");
+    if (_func == nullptr) return .0;
+    Vector<double> values;
+    Set<string> variables;
+    _range.yieldAllValues(variables);
+    context.getValues(variables, values);
+    return _func(values);
 }
 
 string FunctionExpression::toString() const {
-    return _funcName + '(' + _range.startCell + ":" + _range.stopCell + ')';
+    return _funcName + '(' + _range.leftCorner() + ":" + _range.rightCorner() + ')';
 }
 
 ExpressionType FunctionExpression::getType() const {

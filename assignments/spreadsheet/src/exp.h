@@ -249,7 +249,7 @@ public:
      * and right corners of the range to which the function should be applied.
      */
 
-    FunctionExpression(const std::string& funcName, range cellRange);
+    FunctionExpression(const std::string& funcName, RangeFn func, Range cellRange);
 
     /* Prototypes for the virtual methods overridden by this class */
 
@@ -260,11 +260,12 @@ public:
     /* Prototypes of methods specific to this class */
 
     std::string getFuncName() const;
-    range getRange() const { return _range; }
+    Range getRange() const { return _range; }
 
 private:
     std::string _funcName;
-    range _range;
+    RangeFn _func;
+    Range _range;
 };
 
 /**
@@ -288,6 +289,8 @@ public:
  */
 
     virtual double getValue(const std::string& var) const = 0;
+
+    virtual void getValues(const Set<std::string>& variables, Vector<double>& values) const = 0;
 
 /**
  * Method: isDefined

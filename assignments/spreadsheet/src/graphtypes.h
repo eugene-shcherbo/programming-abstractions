@@ -53,8 +53,23 @@ struct arc {
  * This type represents a graph and consists of a set of nodes, a set of
  * arcs, and a map that creates an association between names and nodes.
  */
-struct graph {
-   Set<node *> nodes;
-   Set<arc *> arcs;
-   Map<std::string, node *> index;
+
+class Graph {
+public:
+    void addNode(node* node);
+    void addArc(arc* arc);
+    void addArc(node* node1, node* node2);
+    node* getNode(std::string nodeName) const;
+    bool hasNode(std::string nodeName) const;
+
+    const Set<node*>& getNodes() const { return _nodes; }
+    const Set<arc*>& getArcs() const { return _arcs; }
+
+    void clear();
+    void cleanNode(node* cell);
+
+private:
+    Map<std::string, node*> _index;
+    Set<node*> _nodes;
+    Set<arc*> _arcs;
 };

@@ -11,13 +11,12 @@
 #include "ssutil.h"
 using namespace std;
 
-int colNum(char letter) {
-    return (letter - 'A') + 1;
-}
-
-void yieldRefsFromExpression(const Expression* exp, Set<std::string>& refs) {
+void SSModel::yieldRefsFromExpression(const Expression* exp, Set<std::string>& refs) {
     if (exp->getType() == IDENTIFIER) {
         refs.add(((const IdentifierExp*)exp)->getIdentifierName());
+    } else if (exp->getType() == FUNCTION) {
+        auto func = (const FunctionExpression*)exp;
+        func->getRange().yieldAllValues(refs);
     } else if (exp->getType() == COMPOUND) {
         auto compound = (const CompoundExp*)exp;
         yieldRefsFromExpression(compound->getLHS(), refs);
@@ -45,7 +44,7 @@ SSModel::SSModel(int nRows, int nCols, SSView* view) {
     _numRows = nRows;
     _numCols = nCols;
     _view = view;
-    _spreadsheet = new graph();
+    _spreadsheet = new Graph();
     _evalContext = new SpreadsheetEvaluationContext(this);
 }
 
@@ -61,7 +60,7 @@ bool SSModel::nameIsValid(const string& cellname) const {
         return false;
     }
 
-    int col = colNum(loc.col);
+    int col = loc.col - 'A' + 1;
     int row = loc.row;
 
     return col >= 1 && col <= _numCols && row >= 1 && row <= _numRows;
@@ -79,12 +78,11 @@ void SSModel::setCell(node* cell, Expression* exp) {
     yieldRefsFromExpression(exp, refs);
 
     if (formsCycle(cell, refs)) {
-        error("Cyclic reference");
+        error("Cell formula would introduce a cycle.");
     } else {
-        cleanCell(cell);
+        _spreadsheet->cleanNode(cell);
         cell->exp = exp;
-        _spreadsheet->nodes.add(cell);
-        _spreadsheet->index[cell->name] = cell;
+        _spreadsheet->addNode(cell);
         addDependencies(cell, refs);
     }
 }
@@ -100,7 +98,7 @@ void SSModel::displayCell(node* cell) {
 }
 
 node* SSModel::getCell(const std::string& cellname) {
-    node* cell = _spreadsheet->index[cellname];
+    node* cell = _spreadsheet->getNode(cellname);
 
     if (cell == nullptr) {
         cell = new node();
@@ -111,47 +109,25 @@ node* SSModel::getCell(const std::string& cellname) {
     return cell;
 }
 
-void SSModel::cleanCell(node* cell) {
-    if (cell->exp != nullptr)
-        delete cell->exp;
-
-    for (arc* ref : cell->incoming) {
-        ref->start->outgoing.remove(ref);
-        delete ref;
-    }
-
-    cell->incoming.clear();
-}
-
 void SSModel::addDependencies(node* dependent, const Set<std::string>& refs) {
     for (const std::string& ref : refs) {
         node* refCell = getCell(ref);
-        _spreadsheet->nodes.add(refCell);
-        _spreadsheet->index[ref] = refCell;
-        addDependency(dependent, refCell);
+        _spreadsheet->addNode(refCell);
+        _spreadsheet->addArc(refCell, dependent);
     }
 }
 
-void SSModel::addDependency(node* dependent, node* ref) {
-    arc* dependency = new arc();
-    dependency->start = ref;
-    dependency->finish = dependent;
-    ref->outgoing.add(dependency);
-    dependent->incoming.add(dependency);
-    _spreadsheet->arcs.add(dependency);
-}
-
 void SSModel::printCellInformation(const string& cellname) const {
-    if (!_spreadsheet->index.containsKey(cellname)) {
+    if (isCellEmpty(cellname)) {
         cout << "The cell is empty." << endl;
     } else {
         cout << "Cell Formula: " << cellname << " = "
-             << _spreadsheet->index[cellname]->exp->toString() << endl;
+             << _spreadsheet->getNode(cellname)->exp->toString() << endl;
     }
 }
 
 void SSModel::writeToStream(ostream& outfile) const {
-    for (node* cell: _spreadsheet->nodes) {
+    for (const node* cell: _spreadsheet->getNodes()) {
         outfile << cell->name << " = ";
 
         if (cell->exp->getType() == TEXTSTRING) {
@@ -184,33 +160,25 @@ void SSModel::readFromStream(istream& infile) {
 }
 
 void SSModel::clear() {
-    for (node* cell : _spreadsheet->nodes) {
-        cleanCell(cell);
-        delete cell;
-    }
-
-    for (arc* dependency : _spreadsheet->arcs)
-        delete dependency;
-
-    _spreadsheet->nodes.clear();
-    _spreadsheet->arcs.clear();
-    _spreadsheet->index.clear();
+    _spreadsheet->clear();
     _view->displayEmptySpreadsheet();
 }
 
-
 double SSModel::getCellValue(const std::string& cellname) const {
-    if (!_spreadsheet->index.containsKey(cellname)) {
-        return .0;
-    }
-
-    Expression* exp = _spreadsheet->index[cellname]->exp;
-
-    if (exp == nullptr) {
-        return .0;
-    }
-
+    if (isCellEmpty(cellname)) return .0;
+    Expression* exp = _spreadsheet->getNode(cellname)->exp;
     return exp->eval(*_evalContext);
+}
+
+bool SSModel::isCellEmpty(const std::string& cellname) const {
+    return !_spreadsheet->hasNode(cellname)
+           || _spreadsheet->getNode(cellname)->exp == nullptr;
+}
+
+void SSModel::getCellValues(const Set<std::string>& cellnames, Vector<double>& values) const {
+    for (const string& cellname : cellnames) {
+        values.add(getCellValue(cellname));
+    }
 }
 
 SpreadsheetEvaluationContext::~SpreadsheetEvaluationContext() {
@@ -218,6 +186,11 @@ SpreadsheetEvaluationContext::~SpreadsheetEvaluationContext() {
 
 double SpreadsheetEvaluationContext::getValue(const std::string& var) const {
     return _spreadsheet->getCellValue(var);
+}
+
+
+void SpreadsheetEvaluationContext::getValues(const Set<std::string>& variables, Vector<double>& values) const {
+    _spreadsheet->getCellValues(variables, values);
 }
 
 bool SpreadsheetEvaluationContext::isDefined(const std::string& var) const {
