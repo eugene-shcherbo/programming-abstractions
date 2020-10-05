@@ -9,7 +9,10 @@
 #include "exp.h"
 #include "parser.h"
 #include "ssutil.h"
+#include "queue.h"
 using namespace std;
+
+void topologicalSort(const node* graph, Vector<node*>& vertexes);
 
 void SSModel::yieldRefsFromExpression(const Expression* exp, Set<std::string>& refs) {
     if (exp->getType() == IDENTIFIER) {
@@ -71,6 +74,7 @@ void SSModel::setCellFromScanner(const string& cellname, TokenScanner& scanner) 
     node* cell = getCell(cellname);
     setCell(cell, exp);
     displayCell(cell);
+    updateDependencies(cell);
 }
 
 void SSModel::setCell(node* cell, Expression* exp) {
@@ -94,6 +98,15 @@ void SSModel::displayCell(node* cell) {
     } else {
         double expValue = cell->exp->eval(*_evalContext);
         _view->displayCell(cell->name, realToString(expValue));
+    }
+}
+
+void SSModel::updateDependencies(node* cell) {
+    Vector<node*> dependencies;
+    topologicalSort(cell, dependencies);
+
+    for (node* vertex : dependencies) {
+        displayCell(vertex);
     }
 }
 
@@ -195,4 +208,29 @@ void SpreadsheetEvaluationContext::getValues(const Set<std::string>& variables, 
 
 bool SpreadsheetEvaluationContext::isDefined(const std::string& var) const {
     return _spreadsheet->nameIsValid(var);
+}
+
+void topologicalSortVisit(node* cell, Stack<node*>& sorted, Set<node*>& visited) {
+    if (visited.contains(cell)) return;
+
+    for (const arc* arc : cell->outgoing) {
+        topologicalSortVisit(arc->finish, sorted, visited);
+    }
+
+    visited.add(cell);
+    sorted.push(cell);
+}
+
+void topologicalSort(const node* cell, Vector<node*>& vertexes) {
+    Stack<node*> sorted;
+    Set<node*> visited;
+
+    for (const arc* arc : cell->outgoing) {
+        if (visited.contains(arc->finish)) continue;
+        topologicalSortVisit(arc->finish, sorted, visited);
+    }
+
+    while (!sorted.isEmpty()) {
+        vertexes.add(sorted.pop());
+    }
 }

@@ -163,6 +163,7 @@ private:
     void addDependencies(node* dependent, const Set<std::string>& refs);
     bool isCellEmpty(const std::string& cellname) const;
     void yieldRefsFromExpression(const Expression* exp, Set<std::string>& refs);
+    void updateDependencies(node* cell);
 };
 
 

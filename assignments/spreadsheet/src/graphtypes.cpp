@@ -37,11 +37,16 @@ bool Graph::hasNode(std::string nodeName) const {
 void Graph::clear() {
     for (node* node : getNodes()) {
         cleanNode(node);
-        delete node;
+
+        if (node->outgoing.size() == 0 && node->incoming.size() == 0)
+            delete node;
     }
 
-    for (arc* arc : getArcs())
+    for (arc* arc : getArcs()) {
+        delete arc->start;
+        delete arc->finish;
         delete arc;
+    }
 
     _nodes.clear();
     _arcs.clear();
@@ -54,6 +59,7 @@ void Graph::cleanNode(node* node) {
 
     for (arc* arc : node->incoming) {
         arc->start->outgoing.remove(arc);
+        _arcs.remove(arc);
         delete arc;
     }
 
