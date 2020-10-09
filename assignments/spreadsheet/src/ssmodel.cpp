@@ -88,16 +88,17 @@ void SSModel::setCell(node* cell, Expression* exp) {
         cell->exp = exp;
         _spreadsheet->addNode(cell);
         addDependencies(cell, refs);
+        _cache[toUpperCase(cell->name)] = cell->exp->eval(*_evalContext);
     }
 }
 
-void SSModel::displayCell(node* cell) {
+void SSModel::displayCell(node* cell) const {
     if (cell->exp->getType() == TEXTSTRING) {
         auto exp = static_cast<TextStringExp*>(cell->exp);
         _view->displayCell(cell->name, exp->toString());
     } else {
-        double expValue = cell->exp->eval(*_evalContext);
-        _view->displayCell(cell->name, realToString(expValue));
+        double value = _cache[cell->name];
+        _view->displayCell(cell->name, realToString(value));
     }
 }
 
@@ -106,7 +107,11 @@ void SSModel::updateDependencies(node* cell) {
     topologicalSort(cell, dependencies);
 
     for (node* vertex : dependencies) {
-        displayCell(vertex);
+        double value = vertex->exp->eval(*_evalContext);
+        if (value != getCellValue(vertex->name)) {
+            _cache[toUpperCase(vertex->name)] = value;
+            displayCell(vertex);
+        }
     }
 }
 
@@ -178,9 +183,11 @@ void SSModel::clear() {
 }
 
 double SSModel::getCellValue(const std::string& cellname) const {
-    if (isCellEmpty(cellname)) return .0;
-    Expression* exp = getCell(cellname)->exp;
-    return exp->eval(*_evalContext);
+    if (isCellEmpty(cellname)) {
+        return .0;
+    }
+
+    return _cache[toUpperCase(cellname)];
 }
 
 bool SSModel::isCellEmpty(const std::string& cellname) const {

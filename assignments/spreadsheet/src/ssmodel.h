@@ -152,10 +152,11 @@ private:
     SSView* _view;
     Graph* _spreadsheet;
     SpreadsheetEvaluationContext* _evalContext;
+    Map<std::string, double> _cache;
 
     node* getCell(const std::string& cellName) const;
     void setCell(node* cell, Expression* exp);
-    void displayCell(node* cell);
+    void displayCell(node* cell) const;
     bool formsCycle(node* dependent, const Set<std::string>& refs);
     void addDependencies(node* dependent, const Set<std::string>& refs);
     bool isCellEmpty(const std::string& cellname) const;
