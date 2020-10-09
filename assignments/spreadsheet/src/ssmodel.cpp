@@ -110,12 +110,12 @@ void SSModel::updateDependencies(node* cell) {
     }
 }
 
-node* SSModel::getCell(const std::string& cellname) {
-    node* cell = _spreadsheet->getNode(cellname);
+node* SSModel::getCell(const std::string& cellname) const {
+    node* cell = _spreadsheet->getNode(toUpperCase(cellname));
 
     if (cell == nullptr) {
         cell = new node();
-        cell->name = cellname;
+        cell->name = toUpperCase(cellname);
         cell->exp = nullptr;
     }
 
@@ -135,7 +135,7 @@ void SSModel::printCellInformation(const string& cellname) const {
         cout << "The cell is empty." << endl;
     } else {
         cout << "Cell Formula: " << cellname << " = "
-             << _spreadsheet->getNode(cellname)->exp->toString() << endl;
+             << getCell(cellname)->exp->toString() << endl;
     }
 }
 
@@ -179,13 +179,13 @@ void SSModel::clear() {
 
 double SSModel::getCellValue(const std::string& cellname) const {
     if (isCellEmpty(cellname)) return .0;
-    Expression* exp = _spreadsheet->getNode(cellname)->exp;
+    Expression* exp = getCell(cellname)->exp;
     return exp->eval(*_evalContext);
 }
 
 bool SSModel::isCellEmpty(const std::string& cellname) const {
-    return !_spreadsheet->hasNode(cellname)
-           || _spreadsheet->getNode(cellname)->exp == nullptr;
+    node* cell = getCell(cellname);
+    return cell->exp == nullptr;
 }
 
 void SSModel::getCellValues(const Set<std::string>& cellnames, Vector<double>& values) const {

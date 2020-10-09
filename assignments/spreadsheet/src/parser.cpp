@@ -101,7 +101,7 @@ static Range readRange(TokenScanner& scanner, const SSModel& spreadsheetModel) {
     std::string token = scanner.nextToken();
     if (token != ":") error("Expected ':' after " + leftCorner);
     std::string rightCorner = readCellName(scanner, spreadsheetModel);
-    return Range(leftCorner, rightCorner, spreadsheetModel.lastColName(), spreadsheetModel.lastRowNum());
+    return Range(leftCorner, rightCorner);
 }
 
 static std::string readCellName(TokenScanner& scanner, const SSModel& spreadsheetModel) {

@@ -145,9 +145,6 @@ public:
 
     Vector<double> getRangeValues(range cellRange) const;
 
-    char lastColName() const { return 'A' + _numCols; }
-    int lastRowNum() const { return 1 + _numRows; }
-
 private:
 
     int _numRows;
@@ -156,7 +153,7 @@ private:
     Graph* _spreadsheet;
     SpreadsheetEvaluationContext* _evalContext;
 
-    node* getCell(const std::string& cellName);
+    node* getCell(const std::string& cellName) const;
     void setCell(node* cell, Expression* exp);
     void displayCell(node* cell);
     bool formsCycle(node* dependent, const Set<std::string>& refs);

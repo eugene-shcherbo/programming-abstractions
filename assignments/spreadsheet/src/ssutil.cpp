@@ -107,7 +107,7 @@ double stdev(const Vector<double>& values) {
 	return sqrt((values.size() * sumsquares - sum*sum)/(values.size() * values.size()));
 }
 
-Range::Range(const std::string& leftCorner, const std::string& rightCorner, char lastCol, int lastRow) {
+Range::Range(const std::string& leftCorner, const std::string& rightCorner) {
     if (!stringToLocation(leftCorner, _leftCorner)) error("Invalid cell name format");
     if (!stringToLocation(rightCorner, _rightCorner)) error("Invalid cell name format");
 
@@ -116,9 +116,6 @@ Range::Range(const std::string& leftCorner, const std::string& rightCorner, char
     else if (_leftCorner.col > _rightCorner.col) {
         error("Invalid cell range");
     }
-
-    _lastCol = lastCol;
-    _lastRow = lastRow;
 }
 
 bool Range::contains(const std::string& val) const {
@@ -130,18 +127,16 @@ bool Range::contains(const std::string& val) const {
         return false;
     } else if (value.col > _rightCorner.col && value.row >= _rightCorner.row) {
         return false;
-    } else return true;
+    } else {
+        return true;
+    }
 }
 
 void Range::yieldAllValues(Set<std::string>& values) const {
-    char firstCol = _leftCorner.col;
-
-    for (int row = _leftCorner.row; row <= _rightCorner.row && row <= _lastRow; row++) {
-        for (char col = firstCol; col <= _lastCol; col++) {
+    for (int row = _leftCorner.row; row <= _rightCorner.row; row++) {
+        for (char col = _leftCorner.col; col <= _rightCorner.col; col++) {
             values.add(col + integerToString(row));
-            if (row == _rightCorner.row && col == _rightCorner.col) break;
         }
-        firstCol = 'A';
     }
 }
 

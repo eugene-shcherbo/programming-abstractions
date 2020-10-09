@@ -40,7 +40,7 @@ struct location {
 class Range {
 
 public:
-    Range(const std::string& leftCorner, const std::string& rightCorner, char lastCol, int lastRow);
+    Range(const std::string& leftCorner, const std::string& rightCorner);
 
     bool contains(const std::string& val) const;
     void yieldAllValues(Set<std::string>& values) const;
@@ -50,8 +50,6 @@ public:
 private:
     location _leftCorner;
     location _rightCorner;
-    char _lastCol;
-    int _lastRow;
 };
 		
 /**
