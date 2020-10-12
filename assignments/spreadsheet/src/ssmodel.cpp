@@ -88,8 +88,12 @@ void SSModel::setCell(node* cell, Expression* exp) {
         cell->exp = exp;
         _spreadsheet->addNode(cell);
         addDependencies(cell, refs);
-        _cache[toUpperCase(cell->name)] = cell->exp->eval(*_evalContext);
+        setCellValue(cell, cell->exp->eval(*_evalContext));
     }
+}
+
+void SSModel::setCellValue(node* cell, double value) {
+    _cache[toUpperCase(cell->name)] = value;
 }
 
 void SSModel::displayCell(node* cell) const {
@@ -108,8 +112,9 @@ void SSModel::updateDependencies(node* cell) {
 
     for (node* vertex : dependencies) {
         double value = vertex->exp->eval(*_evalContext);
+
         if (value != getCellValue(vertex->name)) {
-            _cache[toUpperCase(vertex->name)] = value;
+            setCellValue(vertex, value);
             displayCell(vertex);
         }
     }
