@@ -34,3 +34,9 @@
 # QT Creator
 build*
 *.pro.user
+
+# .NET
+.vscode/
+.vs/
+bin/
+obj/
